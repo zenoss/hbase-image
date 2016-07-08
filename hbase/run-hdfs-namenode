@@ -1,0 +1,15 @@
+#!/bin/bash
+# Run HDFS in the foreground
+
+
+source /etc/profile.d/controlcenter.sh
+cat /etc/hosts > /etc/new-hosts
+for ip in $CONTROLPLANE_HOST_IPS; do
+	    echo "$ip localhost"
+    done >> /etc/new-hosts
+    umount /etc/hosts 2>/dev/null
+    mv /etc/new-hosts /etc/hosts
+
+HADOOP_ROOT_LOG_LEVEL=${HADOOP_ROOT_LOG_LEVEL:-INFO}
+export HADOOP_ROOT_LOGGER=${HADOOP_ROOT_LOGGER:-${HADOOP_ROOT_LOG_LEVEL},RFA}
+exec setuser hdfs /opt/hadoop/bin/hdfs namenode

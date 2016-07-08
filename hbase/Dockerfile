@@ -1,0 +1,42 @@
+FROM zenoss/centos-base:1.0.2-java
+MAINTAINER  Zenoss <dev@zenoss.com>
+
+ENV OPENTSDB_VERSION 2.2.0
+ENV HBASE_VERSION 1.1.4
+ENV HADOOP_VERSION 2.5.2
+ENV ZK_VERSION 3.4.5
+ENV JAVA_HOME /usr/lib/jvm/jre
+
+# Add application users/groups
+RUN groupadd -g 105 -r zookeeper && \
+    useradd  -u 102 -g zookeeper -r zookeeper -d /var/lib/zookeeper        -s /bin/false -c "Zookeeper User" && \
+    groupadd -g 106 -r hadoop    && \
+    groupadd -g 107 -r yarn      && \
+    useradd  -u 103 -g yarn      -r yarn      -d /var/lib/hadoop-yarn      -s /bin/bash -c "Hadoop YARN" -G hadoop && \
+    groupadd -g 108 -r mapred    && \
+    useradd  -u 104 -g mapred    -r mapred    -d /var/lib/hadoop-mapreduce -s /bin/bash -c "Hadoop MapReduce" -G hadoop && \
+    groupadd -g 109 -r hdfs      && \
+    useradd  -u 105 -g hdfs      -r hdfs      -d /var/lib/hadoop-hdfs      -s /bin/bash -c "Hadoop HDFS" -G hadoop && \
+    groupadd -g 110 -r hbase     && \
+    useradd  -u 106 -g hbase     -r hbase     -d /var/lib/hbase            -s /bin/bash -c "HBase user" && \
+    groupadd -g 111 -r ntp       && \
+    useradd  -u 107 -g ntp       -r ntp       -d /home/ntp                 -s /bin/false
+
+RUN yum -y install      \
+        gnuplot-minimal \
+        make            \
+        snappy          \
+        lzo             \
+    && /sbin/scrub.sh
+
+# Install zookeeper
+ADD build/zookeeper-${ZK_VERSION}.tar.gz /
+
+# Install opentsdb, hbase, hadoop
+ADD build/aug_opentsdb-${OPENTSDB_VERSION}_hbase-${HBASE_VERSION}_hadoop-${HADOOP_VERSION}.tar.gz /
+RUN chown hbase:hbase /var/hbase /opt/hbase/logs
+RUN chown -R hdfs:hdfs /opt/hadoop/ /var/hdfs
+
+# Install hadoop native lib
+ADD build/libhadoop.so /opt/hbase/lib/native/Linux-amd64-64/libhadoop.so
+

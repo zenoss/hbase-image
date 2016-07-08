@@ -1,0 +1,6 @@
+#!/bin/bash
+# Run HDFS in the foreground
+
+HADOOP_ROOT_LOG_LEVEL=${HADOOP_ROOT_LOG_LEVEL:-INFO}
+export HADOOP_ROOT_LOGGER=${HADOOP_ROOT_LOGGER:-${HADOOP_ROOT_LOG_LEVEL},RFA}
+exec setuser hdfs /opt/hadoop/bin/hdfs secondarynamenode
