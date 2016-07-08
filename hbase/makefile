@@ -14,10 +14,10 @@ OPENTSDB_REPO?=zenoss/opentsdb
 
 ZK_TARBALL := zookeeper-$(ZK_VERSION).tar.gz
 ZK_URL     := http://archive.apache.org/dist/zookeeper/zookeeper-$(ZK_VERSION)/$(ZK_TARBALL)
-HADOOP_TARBALL := opentsdb-$(OPENTSDB_VERSION)_hbase-$(HBASE_VERSION)_hadoop-$(HADOOP_VERSION).tar.gz
-HADOOP_URL := https://zenoss-pip.s3.amazonaws.com/packages/$(HADOOP_TARBALL)
+AGGREGATED_TARBALL := opentsdb-$(OPENTSDB_VERSION)_hbase-$(HBASE_VERSION)_hadoop-$(HADOOP_VERSION).tar.gz
+HADOOP_URL := https://zenoss-pip.s3.amazonaws.com/packages/$(AGGREGATED_TARBALL)
 
-AUGMENTED_HADOOP_TARBALL := aug_$(HADOOP_TARBALL)
+AUGMENTED_AGGREGATED_TARBALL := aug_$(AGGREGATED_TARBALL)
 PWD:=$(shell pwd)
 DATE:=$(shell date +%s)
 
@@ -53,10 +53,10 @@ docker_zk:
 	chmod +x /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 	tar -czf build/$(ZK_TARBALL) /opt /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
-build/$(HADOOP_TARBALL): | build
+build/$(AGGREGATED_TARBALL): | build
 	wget -O $@ $(HADOOP_URL)
 
-build/$(AUGMENTED_HADOOP_TARBALL): build/$(HADOOP_TARBALL) build/hdfsMetrics-1.0.jar | build
+build/$(AUGMENTED_AGGREGATED_TARBALL): build/$(AGGREGATED_TARBALL) build/hdfsMetrics-1.0.jar | build
 	docker run \
 	    -v $(PWD):/mnt/pwd \
 	    -w /mnt/pwd \
@@ -64,7 +64,7 @@ build/$(AUGMENTED_HADOOP_TARBALL): build/$(HADOOP_TARBALL) build/hdfsMetrics-1.0
 	    make docker_hadoop
 
 docker_hadoop:
-	tar -C/ -xzf build/$(HADOOP_TARBALL)
+	tar -C/ -xzf build/$(AGGREGATED_TARBALL)
 	#HBase files
 	ln -s /opt/hadoop/lib/hdfsMetrics-1.0.jar /opt/hbase/lib/hdfsMetrics-1.0.jar
 	mkdir -p /var/hbase
@@ -84,13 +84,13 @@ docker_hadoop:
 	mkdir -p /var/hdfs/name /var/hdfs/data /var/hdfs/secondary
 	cp run-hdfs-namenode run-hdfs-datanode run-hdfs-secondary-namenode /usr/bin
 	chmod a+x /usr/bin/run-hdfs*
-	tar -czf build/$(AUGMENTED_HADOOP_TARBALL) /opt /var/hdfs /var/hbase \
+	tar -czf build/$(AUGMENTED_AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
 	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
 
 build/libhadoop.so: | build
 	wget -O $@ https://zenoss-pip.s3.amazonaws.com/packages/libhadoop.so
 
-image: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AUGMENTED_HADOOP_TARBALL) build/libhadoop.so
+image: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AUGMENTED_AGGREGATED_TARBALL) build/libhadoop.so
 	docker build -t $(HBASE_REPO):$(HBASE_IMAGE_VERSION) .
 	docker run \
 	    -v $(PWD)/init_hdfs.sh:/tmp/init_hdfs.sh \
@@ -101,7 +101,7 @@ image: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AUGMENTED_HADOOP_TA
 	    sh /tmp/init_hdfs.sh
 	docker commit hadoop_build_$(DATE) $(HBASE_REPO):$(HBASE_IMAGE_VERSION)
 
-tarballs: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AUGMENTED_HADOOP_TARBALL) build/libhadoop.so
+tarballs: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AUGMENTED_AGGREGATED_TARBALL) build/libhadoop.so
 
 # OpenTSDB image is just a different name for the hbase image
 opentsdb:
