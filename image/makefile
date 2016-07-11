@@ -36,7 +36,7 @@ stage/hdfsMetrics-1.0.jar: | stage
 build/$(ZK_TARBALL): | build
 	docker run --rm \
 	    -v $(PWD/..):/mnt/pwd \
-	    -w /mnt/pwd/hbase \
+	    -w /mnt/pwd/image \
 	    zenoss/rpmbuild:centos7 \
 	    make docker_zk
 
@@ -65,7 +65,7 @@ stage/$(ESAPI_FILE): | stage
 build/$(AGGREGATED_TARBALL): stage/$(HADOOP_TARBALL) stage/$(HBASE_TARBALL) stage/$(OPENTSDB_TARBALL) stage/$(ESAPI_FILE) stage/hdfsMetrics-1.0.jar
 	docker run --rm \
 	    -v $(PWD)/..:/mnt/pwd \
-	    -w /mnt/pwd/hbase \
+	    -w /mnt/pwd/image \
 	    maven:3.3.3-jdk-7 \
 	    /bin/bash -c "apt-get update && apt-get -y --force-yes install make autoconf patch && make docker_hadoop"
 
