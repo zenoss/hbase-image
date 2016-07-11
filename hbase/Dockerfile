@@ -30,13 +30,13 @@ RUN yum -y install      \
     && /sbin/scrub.sh
 
 # Install zookeeper
-ADD build/zookeeper-${ZK_VERSION}.tar.gz /
+ADD zookeeper-${ZK_VERSION}.tar.gz /
 
 # Install opentsdb, hbase, hadoop
-ADD build/opentsdb-${OPENTSDB_VERSION}_hbase-${HBASE_VERSION}_hadoop-${HADOOP_VERSION}.tar.gz /
+ADD opentsdb-${OPENTSDB_VERSION}_hbase-${HBASE_VERSION}_hadoop-${HADOOP_VERSION}.tar.gz /
 RUN chown hbase:hbase /var/hbase /opt/hbase/logs
 RUN chown -R hdfs:hdfs /opt/hadoop/ /var/hdfs
 
 # Install hadoop native lib
-ADD build/libhadoop.so /opt/hbase/lib/native/Linux-amd64-64/libhadoop.so
+ADD libhadoop.so /opt/hbase/lib/native/Linux-amd64-64/libhadoop.so
 

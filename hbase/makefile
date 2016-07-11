@@ -33,7 +33,10 @@ default: image
 build:
 	mkdir -p build
 
-build/hdfsMetrics-1.0.jar: | build
+stage:
+	mkdir -p stage
+
+stage/hdfsMetrics-1.0.jar: | stage
 	docker run \
 	    --rm \
 	    -v $(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics \
@@ -42,10 +45,10 @@ build/hdfsMetrics-1.0.jar: | build
 	    -w /mnt/src/hdfsMetrics \
 	    zenoss/rpmbuild:centos7 \
 	    mvn package
-	cp hdfsMetrics/target/hdfsMetrics-1.0-jar-with-dependencies.jar build/hdfsMetrics-1.0.jar
+	cp hdfsMetrics/target/hdfsMetrics-1.0-jar-with-dependencies.jar $@
 
 build/$(ZK_TARBALL): | build
-	docker run i --rm \
+	docker run --rm \
 	    -v $(PWD):/mnt/pwd \
 	    -w /mnt/pwd \
 	    zenoss/rpmbuild:centos7 \
@@ -60,20 +63,20 @@ docker_zk:
 	chmod +x /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 	tar -czf build/$(ZK_TARBALL) /opt /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
-build/$(HADOOP_TARBALL): | build
+stage/$(HADOOP_TARBALL): | stage
 	wget -O $@ $(HADOOP_INSTALL)
 
-build/$(HBASE_TARBALL): | build
+stage/$(HBASE_TARBALL): | stage
 	wget -O $@ $(HBASE_INSTALL)
 
-build/$(OPENTSDB_TARBALL): | build
+stage/$(OPENTSDB_TARBALL): | stage
 	wget -O $@ $(OPENTSDB_INSTALL)
 
 # There is a bug in Hbase 1.1.4 that causes this file to be missing.
-build/ESAPI.properties: | build
+stage/ESAPI.properties: | stage
 	wget -O $@ $(ESAPI_INSTALL)
 
-build/$(AGGREGATED_TARBALL): build/$(HADOOP_TARBALL) build/$(HBASE_TARBALL) build/$(OPENTSDB_TARBALL) build/ESAPI.properties
+build/$(AGGREGATED_TARBALL): stage/$(HADOOP_TARBALL) stage/$(HBASE_TARBALL) stage/$(OPENTSDB_TARBALL) stage/ESAPI.properties stage/hdfsMetrics-1.0.jar
 	docker run --rm \
 	    -v $(PWD):/mnt/pwd \
 	    -w /mnt/pwd \
@@ -82,12 +85,12 @@ build/$(AGGREGATED_TARBALL): build/$(HADOOP_TARBALL) build/$(HBASE_TARBALL) buil
 
 docker_hadoop:
 	mkdir -p /opt/zenoss/etc/supervisor
-	tar -C /opt -xzf build/$(HBASE_TARBALL) --exclude src --exclude docs --exclude '*-tests.jar'
+	tar -C /opt -xzf stage/$(HBASE_TARBALL) --exclude src --exclude docs --exclude '*-tests.jar'
 	ln -s /opt/hbase-$(HBASE_VERSION) /opt/hbase
-	cp build/ESAPI.properties /opt/hbase/conf/
-	tar -C /opt -xzf build/$(HADOOP_TARBALL) --exclude doc --exclude sources --exclude jdiff
+	cp stage/ESAPI.properties /opt/hbase/conf/
+	tar -C /opt -xzf stage/$(HADOOP_TARBALL) --exclude doc --exclude sources --exclude jdiff
 	ln -s /opt/hadoop-$(HADOOP_VERSION) /opt/hadoop
-	tar -C /opt -xzf build/$(OPENTSDB_TARBALL)
+	tar -C /opt -xzf stage/$(OPENTSDB_TARBALL)
 	ln -s /opt/opentsdb-$(OPENTSDB_VERSION) /opt/opentsdb
 	cp /opt/hbase/lib/hadoop-client*.jar /opt/
 	rm -f /opt/hbase/lib/hadoop-*
@@ -115,7 +118,7 @@ docker_hadoop:
 	    create-opentsdb-tables.sh set-opentsdb-table-ttl.sh opentsdb_watchdog.sh check_opentsdb.py \
 	    /opt/opentsdb
 	#HDFS files
-	cp build/hdfsMetrics-1.0.jar /opt/hadoop/lib/hdfsMetrics-1.0.jar
+	cp stage/hdfsMetrics-1.0.jar /opt/hadoop/lib/hdfsMetrics-1.0.jar
 	mkdir -p /var/hdfs/name /var/hdfs/data /var/hdfs/secondary
 	cp run-hdfs-namenode run-hdfs-datanode run-hdfs-secondary-namenode /usr/bin
 	chmod a+x /usr/bin/run-hdfs*
@@ -125,8 +128,11 @@ docker_hadoop:
 build/libhadoop.so: | build
 	wget -O $@ https://zenoss-pip.s3.amazonaws.com/packages/libhadoop.so
 
-image: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so
-	docker build -t $(HBASE_REPO):$(HBASE_IMAGE_VERSION) .
+build/%: % | build
+	cp $< $@
+
+image: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so build/Dockerfile
+	docker build -t $(HBASE_REPO):$(HBASE_IMAGE_VERSION) build
 	docker run \
 	    -v $(PWD)/init_hdfs.sh:/tmp/init_hdfs.sh \
 	    -v $(PWD)/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml \
