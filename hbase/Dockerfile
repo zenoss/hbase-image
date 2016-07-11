@@ -33,7 +33,7 @@ RUN yum -y install      \
 ADD build/zookeeper-${ZK_VERSION}.tar.gz /
 
 # Install opentsdb, hbase, hadoop
-ADD build/aug_opentsdb-${OPENTSDB_VERSION}_hbase-${HBASE_VERSION}_hadoop-${HADOOP_VERSION}.tar.gz /
+ADD build/opentsdb-${OPENTSDB_VERSION}_hbase-${HBASE_VERSION}_hadoop-${HADOOP_VERSION}.tar.gz /
 RUN chown hbase:hbase /var/hbase /opt/hbase/logs
 RUN chown -R hdfs:hdfs /opt/hadoop/ /var/hdfs
 

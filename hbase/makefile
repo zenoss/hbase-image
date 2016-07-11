@@ -12,12 +12,19 @@ HBASE_REPO?=zenoss/hbase
 HDFS_REPO?=zenoss/hdfs
 OPENTSDB_REPO?=zenoss/opentsdb
 
-ZK_TARBALL := zookeeper-$(ZK_VERSION).tar.gz
-ZK_URL     := http://archive.apache.org/dist/zookeeper/zookeeper-$(ZK_VERSION)/$(ZK_TARBALL)
-AGGREGATED_TARBALL := opentsdb-$(OPENTSDB_VERSION)_hbase-$(HBASE_VERSION)_hadoop-$(HADOOP_VERSION).tar.gz
-HADOOP_URL := https://zenoss-pip.s3.amazonaws.com/packages/$(AGGREGATED_TARBALL)
+HBASE_TARBALL	 := hbase-$(HBASE_VERSION)-bin.tar.gz
+OPENTSDB_TARBALL := opentsdb-$(OPENTSDB_VERSION).tar.gz
+HADOOP_TARBALL   := hadoop-$(HADOOP_VERSION).tar.gz
+ZK_TARBALL       := zookeeper-$(ZK_VERSION).tar.gz
 
-AUGMENTED_AGGREGATED_TARBALL := aug_$(AGGREGATED_TARBALL)
+HBASE_INSTALL    := https://archive.apache.org/dist/hbase/$(HBASE_VERSION)/$(HBASE_TARBALL)
+OPENTSDB_INSTALL := https://github.com/OpenTSDB/opentsdb/releases/download/v$(OPENTSDB_VERSION)/$(OPENTSDB_TARBALL)
+HADOOP_INSTALL   := https://archive.apache.org/dist/hadoop/core/hadoop-$(HADOOP_VERSION)/$(HADOOP_TARBALL)
+ESAPI_INSTALL    := https://github.com/apache/hbase/blob/rel/$(HBASE_VERSION)/hbase-server/src/main/resources/ESAPI.properties
+ZK_URL           := http://archive.apache.org/dist/zookeeper/zookeeper-$(ZK_VERSION)/$(ZK_TARBALL)
+
+AGGREGATED_TARBALL := opentsdb-$(OPENTSDB_VERSION)_hbase-$(HBASE_VERSION)_hadoop-$(HADOOP_VERSION).tar.gz
+
 PWD:=$(shell pwd)
 DATE:=$(shell date +%s)
 
@@ -53,18 +60,46 @@ docker_zk:
 	chmod +x /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 	tar -czf build/$(ZK_TARBALL) /opt /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
-build/$(AGGREGATED_TARBALL): | build
-	wget -O $@ $(HADOOP_URL)
+build/$(HADOOP_TARBALL): | build
+	wget -O $@ $(HADOOP_INSTALL)
 
-build/$(AUGMENTED_AGGREGATED_TARBALL): build/$(AGGREGATED_TARBALL) build/hdfsMetrics-1.0.jar | build
+build/$(HBASE_TARBALL): | build
+	wget -O $@ $(HBASE_INSTALL)
+
+build/$(OPENTSDB_TARBALL): | build
+	wget -O $@ $(OPENTSDB_INSTALL)
+
+# There is a bug in Hbase 1.1.4 that causes this file to be missing.
+build/ESAPI.properties: | build
+	wget -O $@ $(ESAPI_INSTALL)
+
+build/$(AGGREGATED_TARBALL): build/$(HADOOP_TARBALL) build/$(HBASE_TARBALL) build/$(OPENTSDB_TARBALL) build/ESAPI.properties
 	docker run \
 	    -v $(PWD):/mnt/pwd \
 	    -w /mnt/pwd \
-	    zenoss/rpmbuild:centos7 \
-	    make docker_hadoop
+	    maven:3.3.3-jdk-7 \
+	    /bin/bash -c "apt-get update && apt-get -y --force-yes install make autoconf patch && make docker_hadoop"
 
 docker_hadoop:
-	tar -C/ -xzf build/$(AGGREGATED_TARBALL)
+	mkdir -p /opt/zenoss/etc/supervisor
+	tar -C /opt -xzf build/$(HBASE_TARBALL) --exclude src --exclude docs --exclude '*-tests.jar'
+	ln -s /opt/hbase-$(HBASE_VERSION) /opt/hbase
+	cp build/ESAPI.properties /opt/hbase/conf/
+	tar -C /opt -xzf build/$(HADOOP_TARBALL) --exclude doc --exclude sources --exclude jdiff
+	ln -s /opt/hadoop-$(HADOOP_VERSION) /opt/hadoop
+	tar -C /opt -xzf build/$(OPENTSDB_TARBALL)
+	ln -s /opt/opentsdb-$(OPENTSDB_VERSION) /opt/opentsdb
+	cp /opt/hbase/lib/hadoop-client*.jar /opt/
+	rm -f /opt/hbase/lib/hadoop-*
+	mv /opt/hadoop-client*.jar /opt/hbase/lib/
+	ln -s /opt/hadoop/share/hadoop/common/hadoop-*.jar /opt/hbase/lib/
+	ln -s /opt/hadoop/share/hadoop/hdfs/hadoop-*.jar /opt/hbase/lib
+	cp /opt/hadoop/share/hadoop/mapreduce/hadoop-*.jar /opt/hbase/lib/
+	cp /opt/hadoop/share/hadoop/tools/lib/hadoop-*.jar /opt/hbase/lib/
+	cp /opt/hadoop/share/hadoop/yarn/hadoop-*.jar /opt/hbase/lib/
+	cd /opt/opentsdb-$(OPENTSDB_VERSION) && COMPRESSION=NONE HBASE_HOME=/opt/hbase-$(HBASE_VERSION) ./build.sh
+	rm -rf /opt/opentsdb-$(OPENTSDB_VERSION)/build/gwt-unitCache /opt/opentsdb-$(OPENTSDB_VERSION)/build/third_party/gwt/gwt-dev-*.jar
+	bash -c "rm -rf /opt/hadoop/share/hadoop/{httpfs,mapreduce,tools,yarn}"
 	#HBase files
 	ln -s /opt/hadoop/lib/hdfsMetrics-1.0.jar /opt/hbase/lib/hdfsMetrics-1.0.jar
 	mkdir -p /var/hbase
@@ -84,13 +119,13 @@ docker_hadoop:
 	mkdir -p /var/hdfs/name /var/hdfs/data /var/hdfs/secondary
 	cp run-hdfs-namenode run-hdfs-datanode run-hdfs-secondary-namenode /usr/bin
 	chmod a+x /usr/bin/run-hdfs*
-	tar -czf build/$(AUGMENTED_AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
+	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
 	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
 
 build/libhadoop.so: | build
 	wget -O $@ https://zenoss-pip.s3.amazonaws.com/packages/libhadoop.so
 
-image: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AUGMENTED_AGGREGATED_TARBALL) build/libhadoop.so
+image: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so
 	docker build -t $(HBASE_REPO):$(HBASE_IMAGE_VERSION) .
 	docker run \
 	    -v $(PWD)/init_hdfs.sh:/tmp/init_hdfs.sh \
@@ -101,7 +136,7 @@ image: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AUGMENTED_AGGREGATE
 	    sh /tmp/init_hdfs.sh
 	docker commit hadoop_build_$(DATE) $(HBASE_REPO):$(HBASE_IMAGE_VERSION)
 
-tarballs: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AUGMENTED_AGGREGATED_TARBALL) build/libhadoop.so
+tarballs: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so
 
 # OpenTSDB image is just a different name for the hbase image
 opentsdb:
