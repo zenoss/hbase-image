@@ -45,7 +45,7 @@ build/hdfsMetrics-1.0.jar: | build
 	cp hdfsMetrics/target/hdfsMetrics-1.0-jar-with-dependencies.jar build/hdfsMetrics-1.0.jar
 
 build/$(ZK_TARBALL): | build
-	docker run \
+	docker run i --rm \
 	    -v $(PWD):/mnt/pwd \
 	    -w /mnt/pwd \
 	    zenoss/rpmbuild:centos7 \
@@ -74,7 +74,7 @@ build/ESAPI.properties: | build
 	wget -O $@ $(ESAPI_INSTALL)
 
 build/$(AGGREGATED_TARBALL): build/$(HADOOP_TARBALL) build/$(HBASE_TARBALL) build/$(OPENTSDB_TARBALL) build/ESAPI.properties
-	docker run \
+	docker run --rm \
 	    -v $(PWD):/mnt/pwd \
 	    -w /mnt/pwd \
 	    maven:3.3.3-jdk-7 \
