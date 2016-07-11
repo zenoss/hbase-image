@@ -1,27 +1,13 @@
-HBASE_VERSION    := 1.1.4
-OPENTSDB_VERSION := 2.2.0
-HADOOP_VERSION   := 2.5.2
-ZK_VERSION       := 3.4.5
+include ../versions.mk
 
-VERSIONS_FILE          = ./versions
-HBASE_IMAGE_VERSION    = $(shell awk /hbase/'{print $$2}' $(VERSIONS_FILE))
-HDFS_IMAGE_VERSION     = $(shell awk /hdfs/'{print $$2}' $(VERSIONS_FILE))
-OPENTSDB_IMAGE_VERSION = $(shell awk /opentsdb/'{print $$2}' $(VERSIONS_FILE))
+ZENPIP := https://zenoss-pip.s3.amazonaws.com/packages
+
+# Internal zenpip server
+# ZENPIP := http://zenpip.zendev.org/packages
 
 HBASE_REPO?=zenoss/hbase
 HDFS_REPO?=zenoss/hdfs
 OPENTSDB_REPO?=zenoss/opentsdb
-
-HBASE_TARBALL	 := hbase-$(HBASE_VERSION)-bin.tar.gz
-OPENTSDB_TARBALL := opentsdb-$(OPENTSDB_VERSION).tar.gz
-HADOOP_TARBALL   := hadoop-$(HADOOP_VERSION).tar.gz
-ZK_TARBALL       := zookeeper-$(ZK_VERSION).tar.gz
-
-HBASE_INSTALL    := https://archive.apache.org/dist/hbase/$(HBASE_VERSION)/$(HBASE_TARBALL)
-OPENTSDB_INSTALL := https://github.com/OpenTSDB/opentsdb/releases/download/v$(OPENTSDB_VERSION)/$(OPENTSDB_TARBALL)
-HADOOP_INSTALL   := https://archive.apache.org/dist/hadoop/core/hadoop-$(HADOOP_VERSION)/$(HADOOP_TARBALL)
-ESAPI_INSTALL    := https://github.com/apache/hbase/blob/rel/$(HBASE_VERSION)/hbase-server/src/main/resources/ESAPI.properties
-ZK_URL           := http://archive.apache.org/dist/zookeeper/zookeeper-$(ZK_VERSION)/$(ZK_TARBALL)
 
 AGGREGATED_TARBALL := opentsdb-$(OPENTSDB_VERSION)_hbase-$(HBASE_VERSION)_hadoop-$(HADOOP_VERSION).tar.gz
 
@@ -49,8 +35,8 @@ stage/hdfsMetrics-1.0.jar: | stage
 
 build/$(ZK_TARBALL): | build
 	docker run --rm \
-	    -v $(PWD):/mnt/pwd \
-	    -w /mnt/pwd \
+	    -v $(PWD/..):/mnt/pwd \
+	    -w /mnt/pwd/hbase \
 	    zenoss/rpmbuild:centos7 \
 	    make docker_zk
 
@@ -64,22 +50,22 @@ docker_zk:
 	tar -czf build/$(ZK_TARBALL) /opt /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
 stage/$(HADOOP_TARBALL): | stage
-	wget -O $@ $(HADOOP_INSTALL)
+	wget -O $@ $(ZENPIP)/$(@F)
 
 stage/$(HBASE_TARBALL): | stage
-	wget -O $@ $(HBASE_INSTALL)
+	wget -O $@ $(ZENPIP)/$(@F)
 
 stage/$(OPENTSDB_TARBALL): | stage
-	wget -O $@ $(OPENTSDB_INSTALL)
+	wget -O $@ $(ZENPIP)/$($@F)
 
 # There is a bug in Hbase 1.1.4 that causes this file to be missing.
-stage/ESAPI.properties: | stage
-	wget -O $@ $(ESAPI_INSTALL)
+stage/$(ESAPI_FILE): | stage
+	wget -O $@ $(ZENPIP)/$(@F)
 
-build/$(AGGREGATED_TARBALL): stage/$(HADOOP_TARBALL) stage/$(HBASE_TARBALL) stage/$(OPENTSDB_TARBALL) stage/ESAPI.properties stage/hdfsMetrics-1.0.jar
+build/$(AGGREGATED_TARBALL): stage/$(HADOOP_TARBALL) stage/$(HBASE_TARBALL) stage/$(OPENTSDB_TARBALL) stage/$(ESAPI_FILE) stage/hdfsMetrics-1.0.jar
 	docker run --rm \
-	    -v $(PWD):/mnt/pwd \
-	    -w /mnt/pwd \
+	    -v $(PWD)/..:/mnt/pwd \
+	    -w /mnt/pwd/hbase \
 	    maven:3.3.3-jdk-7 \
 	    /bin/bash -c "apt-get update && apt-get -y --force-yes install make autoconf patch && make docker_hadoop"
 
@@ -87,7 +73,7 @@ docker_hadoop:
 	mkdir -p /opt/zenoss/etc/supervisor
 	tar -C /opt -xzf stage/$(HBASE_TARBALL) --exclude src --exclude docs --exclude '*-tests.jar'
 	ln -s /opt/hbase-$(HBASE_VERSION) /opt/hbase
-	cp stage/ESAPI.properties /opt/hbase/conf/
+	cp stage/$(ESAPI_FILE) /opt/hbase/conf/ESAPI.properties
 	tar -C /opt -xzf stage/$(HADOOP_TARBALL) --exclude doc --exclude sources --exclude jdiff
 	ln -s /opt/hadoop-$(HADOOP_VERSION) /opt/hadoop
 	tar -C /opt -xzf stage/$(OPENTSDB_TARBALL)
