@@ -3,7 +3,7 @@ OPENTSDB_VERSION := 2.2.0
 HADOOP_VERSION   := 2.5.2
 ZK_VERSION       := 3.4.5
 
-VERSIONS_FILE    = ../../../versions
+VERSIONS_FILE          = ./versions
 HBASE_IMAGE_VERSION    = $(shell awk /hbase/'{print $$2}' $(VERSIONS_FILE))
 HDFS_IMAGE_VERSION     = $(shell awk /hdfs/'{print $$2}' $(VERSIONS_FILE))
 OPENTSDB_IMAGE_VERSION = $(shell awk /opentsdb/'{print $$2}' $(VERSIONS_FILE))
