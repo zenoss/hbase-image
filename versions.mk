@@ -9,7 +9,12 @@ HDFS_IMAGE_VERSION     := v4
 OPENTSDB_IMAGE_VERSION := v23
 
 HBASE_TARBALL    := hbase-$(HBASE_VERSION)-bin.tar.gz
-ESAPI_FILE       := ESAPI-$(HBASE_VERSION).properties
 OPENTSDB_TARBALL := opentsdb-$(OPENTSDB_VERSION).tar.gz
 HADOOP_TARBALL   := hadoop-$(HADOOP_VERSION).tar.gz
 ZK_TARBALL       := zookeeper-$(ZK_VERSION).tar.gz
+
+# Note: the ESAPI.properties file is mistakenly not included in Hadoop 1.1.4.
+# Once we move to the next version of hadoop we should not have to explicitly
+# include this file in the image.
+ESAPI_FILE       := ESAPI-$(HBASE_VERSION).properties
+

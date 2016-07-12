@@ -22,6 +22,9 @@ BUILD_DIR:
 stage:
 	mkdir -p stage
 
+stage/%: | stage
+	wget -O $@ $(ZENPIP)/$(@F)
+
 stage/hdfsMetrics-1.0.jar: | stage
 	docker run \
 	    --rm \
@@ -32,9 +35,6 @@ stage/hdfsMetrics-1.0.jar: | stage
 	    zenoss/rpmbuild:centos7 \
 	    mvn package
 	cp hdfsMetrics/target/hdfsMetrics-1.0-jar-with-dependencies.jar $@
-
-stage/$(ZK_TARBALL): | stage
-	wget -O $@ $(ZENPIP)/$(@F)
 
 build/$(ZK_TARBALL): stage/$(ZK_TARBALL) | BUILD_DIR
 	docker run --rm \
@@ -52,23 +52,7 @@ docker_zk:
 	chmod +x /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 	tar -czf build/$(ZK_TARBALL) /opt /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
-stage/$(HADOOP_TARBALL): | stage
-	wget -O $@ $(ZENPIP)/$(@F)
-
-stage/$(HBASE_TARBALL): | stage
-	wget -O $@ $(ZENPIP)/$(@F)
-
-stage/$(OPENTSDB_TARBALL): | stage
-	wget -O $@ $(ZENPIP)/$(@F)
-
-stage/libhadoop.so: | stage
-	wget -O $@ $(ZENPIP)/$(@F)
-
-# There is a bug in Hbase 1.1.4 that causes this file to be missing.
-stage/$(ESAPI_FILE): | stage
-	wget -O $@ $(ZENPIP)/$(@F)
-
-build/$(AGGREGATED_TARBALL): stage/$(HADOOP_TARBALL) stage/$(HBASE_TARBALL) stage/$(OPENTSDB_TARBALL) stage/$(ESAPI_FILE) stage/hdfsMetrics-1.0.jar
+build/$(AGGREGATED_TARBALL): stage/$(HADOOP_TARBALL) stage/$(HBASE_TARBALL) stage/$(OPENTSDB_TARBALL) stage/$(ESAPI_FILE) stage/hdfsMetrics-1.0.jar | BUILD_DIR
 	docker run --rm \
 	    -v $(PWD)/..:/mnt/pwd \
 	    -w /mnt/pwd/image \
@@ -145,7 +129,6 @@ hdfs:
 	docker tag $(HBASE_REPO):$(HBASE_IMAGE_VERSION) $(HDFS_REPO):$(HDFS_IMAGE_VERSION)
 
 push: default
-	echo $(HOME)
 	docker push $(HBASE_REPO):$(HBASE_IMAGE_VERSION)
 	docker push $(HDFS_REPO):$(HDFS_IMAGE_VERSION)
 	docker push $(OPENTSDB_REPO):$(OPENTSDB_IMAGE_VERSION)
@@ -158,4 +141,3 @@ clean:
 	    -w /mnt/src/hdfsMetrics \
 	    zenoss/rpmbuild:centos7 \
 	    mvn clean
-	@echo
