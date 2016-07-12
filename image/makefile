@@ -61,6 +61,9 @@ stage/$(HBASE_TARBALL): | stage
 stage/$(OPENTSDB_TARBALL): | stage
 	wget -O $@ $(ZENPIP)/$(@F)
 
+stage/libhadoop.so: | stage
+	wget -O $@ $(ZENPIP)/$(@F)
+
 # There is a bug in Hbase 1.1.4 that causes this file to be missing.
 stage/$(ESAPI_FILE): | stage
 	wget -O $@ $(ZENPIP)/$(@F)
@@ -114,8 +117,8 @@ docker_hadoop:
 	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
 	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
 
-build/libhadoop.so: | build
-	wget -O $@ https://zenoss-pip.s3.amazonaws.com/packages/libhadoop.so
+build/libhadoop.so: stage/libhadoop.so | build
+	cp -p $< $@ 
 
 build/%: % | build
 	cp $< $@
