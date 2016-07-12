@@ -14,9 +14,9 @@ AGGREGATED_TARBALL := opentsdb-$(OPENTSDB_VERSION)_hbase-$(HBASE_VERSION)_hadoop
 PWD:=$(shell pwd)
 DATE:=$(shell date +%s)
 
-default: image
+build: hbase hdfs opentsdb
 
-build:
+BUILD_DIR:
 	mkdir -p build
 
 stage:
@@ -36,7 +36,7 @@ stage/hdfsMetrics-1.0.jar: | stage
 stage/$(ZK_TARBALL): | stage
 	wget -O $@ $(ZENPIP)/$(@F)
 
-build/$(ZK_TARBALL): stage/$(ZK_TARBALL) | build
+build/$(ZK_TARBALL): stage/$(ZK_TARBALL) | BUILD_DIR
 	docker run --rm \
 	    -v $(PWD)/..:/mnt/pwd \
 	    -w /mnt/pwd/image \
@@ -117,13 +117,13 @@ docker_hadoop:
 	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
 	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
 
-build/libhadoop.so: stage/libhadoop.so | build
+build/libhadoop.so: stage/libhadoop.so | BUILD_DIR
 	cp -p $< $@ 
 
-build/%: % | build
+build/Dockerfile: Dockerfile | BUILD_DIR
 	cp $< $@
 
-image: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so build/Dockerfile
+hbase: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so build/Dockerfile
 	docker build -t $(HBASE_REPO):$(HBASE_IMAGE_VERSION) build
 	docker run \
 	    -v $(PWD)/init_hdfs.sh:/tmp/init_hdfs.sh \
