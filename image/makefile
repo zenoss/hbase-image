@@ -33,15 +33,18 @@ stage/hdfsMetrics-1.0.jar: | stage
 	    mvn package
 	cp hdfsMetrics/target/hdfsMetrics-1.0-jar-with-dependencies.jar $@
 
-build/$(ZK_TARBALL): | build
+stage/$(ZK_TARBALL): | stage
+	wget -O $@ $(ZENPIP)/$(@F)
+
+build/$(ZK_TARBALL): stage/$(ZK_TARBALL) | build
 	docker run --rm \
-	    -v $(PWD/..):/mnt/pwd \
+	    -v $(PWD)/..:/mnt/pwd \
 	    -w /mnt/pwd/image \
 	    zenoss/rpmbuild:centos7 \
 	    make docker_zk
 
 docker_zk:
-	wget -O- $(ZK_URL) | tar -C/opt -xz \
+	tar -C/opt -xzf stage/$(ZK_TARBALL) \
 	    --exclude contrib --exclude src --exclude docs --exclude dist-maven \
 	    --exclude recipes --exclude CHANGES.txt --exclude build.xml
 	ln -s /opt/zookeeper-$(ZK_VERSION) /opt/zookeeper
@@ -56,7 +59,7 @@ stage/$(HBASE_TARBALL): | stage
 	wget -O $@ $(ZENPIP)/$(@F)
 
 stage/$(OPENTSDB_TARBALL): | stage
-	wget -O $@ $(ZENPIP)/$($@F)
+	wget -O $@ $(ZENPIP)/$(@F)
 
 # There is a bug in Hbase 1.1.4 that causes this file to be missing.
 stage/$(ESAPI_FILE): | stage
