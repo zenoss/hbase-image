@@ -13,6 +13,12 @@ HBASE_IMAGE    := $(HBASE_REPO):$(HBASE_IMAGE_VERSION)
 HDFS_IMAGE     := $(HDFS_REPO):$(HDFS_IMAGE_VERSION)
 OPENTSDB_IMAGE := $(OPENTSDB_REPO):$(OPENTSDB_IMAGE_VERSION)
 
+# Initialize the hbase, hdfs, and opentsdb placeholder files.
+# These files match the existence and date of the corresponding
+# images for the make process to use in generating dependencies.
+DUMMY := $(shell ./set_date_from_image $(HBASE_IMAGE) hbase)
+DUMMY := $(shell ./set_date_from_image $(HDFS_IMAGE) hdfs)
+DUMMY := $(shell ./set_date_from_image $(OPENTSDB_IMAGE) opentsdb)
 
 AGGREGATED_TARBALL := opentsdb-$(OPENTSDB_VERSION)_hbase-$(HBASE_VERSION)_hadoop-$(HADOOP_VERSION).tar.gz
 
@@ -122,14 +128,17 @@ hbase: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so build/
 	    $(HBASE_IMAGE) \
 	    sh /tmp/init_hdfs.sh
 	docker commit hadoop_build_$(DATE) $(HBASE_IMAGE)
+	@./set_date_from_image $(HBASE_IMAGE) $@
 
 # OpenTSDB image is just a different name for the hbase image
-opentsdb:
+opentsdb: hbase
 	docker tag $(HBASE_IMAGE) $(OPENTSDB_IMAGE)
+	@./set_date_from_image $(HBASE_IMAGE) $@
 
 # HDFS image is just a different name for the hbase image
-hdfs:
+hdfs: hbase
 	docker tag $(HBASE_IMAGE) $(HDFS_IMAGE)
+	@./set_date_from_image $(HBASE_IMAGE) $@
 
 push:
 	docker push $(HBASE_IMAGE)
@@ -138,6 +147,7 @@ push:
 
 clean:
 	-docker rmi $(HBASE_IMAGE) $(OPENTSDB_IMAGE) $(HDFS_IMAGE)
+	rm -rf hbase hdfs opentsdb
 	rm -rf build
 	docker run \
 	    --rm \
