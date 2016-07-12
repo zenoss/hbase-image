@@ -155,3 +155,19 @@ clean:
 	    -w /mnt/src/hdfsMetrics \
 	    zenoss/rpmbuild:centos7 \
 	    mvn clean
+
+# Generate a make failure if the VERSION string contains "-<some letters>"
+verifyVersion:
+	@./verifyVersion.sh $(HBASE_IMAGE_VERSION)
+	@./verifyVersion.sh $(HDFS_IMAGE_VERSION)
+	@./verifyVersion.sh $(OPENTSDB_IMAGE_VERSION)
+
+# Generate a make failure if the image(s) already exist
+verifyImage:
+	@./verifyImage.sh $(HBASE_REPO) $(HBASE_IMAGE_VERSION)
+	@./verifyImage.sh $(HDFS_REPO) $(HDFS_IMAGE_VERSION)
+	@./verifyImage.sh $(OPENTSDB_REPO) $(OPENTSDB_IMAGE_VERSION)
+
+# Do not release if the image version is invalid
+# This target is intended for use when trying to build/publish images from the master branch
+release: verifyVersion verifyImage clean build push
