@@ -9,6 +9,11 @@ HBASE_REPO?=zenoss/hbase
 HDFS_REPO?=zenoss/hdfs
 OPENTSDB_REPO?=zenoss/opentsdb
 
+HBASE_IMAGE    := $(HBASE_REPO):$(HBASE_IMAGE_VERSION)
+HDFS_IMAGE     := $(HDFS_REPO):$(HDFS_IMAGE_VERSION)
+OPENTSDB_IMAGE := $(OPENTSDB_REPO):$(OPENTSDB_IMAGE_VERSION)
+
+
 AGGREGATED_TARBALL := opentsdb-$(OPENTSDB_VERSION)_hbase-$(HBASE_VERSION)_hadoop-$(HADOOP_VERSION).tar.gz
 
 PWD:=$(shell pwd)
@@ -108,32 +113,31 @@ build/Dockerfile: Dockerfile | BUILD_DIR
 	cp $< $@
 
 hbase: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so build/Dockerfile
-	docker build -t $(HBASE_REPO):$(HBASE_IMAGE_VERSION) build
+	docker build -t $(HBASE_IMAGE) build
 	docker run \
 	    -v $(PWD)/init_hdfs.sh:/tmp/init_hdfs.sh \
 	    -v $(PWD)/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml \
 	    -v $(PWD)/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml \
 	    --name hadoop_build_$(DATE) \
-	    $(HBASE_REPO):$(HBASE_IMAGE_VERSION) \
+	    $(HBASE_IMAGE) \
 	    sh /tmp/init_hdfs.sh
-	docker commit hadoop_build_$(DATE) $(HBASE_REPO):$(HBASE_IMAGE_VERSION)
-
-tarballs: build/hdfsMetrics-1.0.jar build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so
+	docker commit hadoop_build_$(DATE) $(HBASE_IMAGE)
 
 # OpenTSDB image is just a different name for the hbase image
 opentsdb:
-	docker tag $(HBASE_REPO):$(HBASE_IMAGE_VERSION) $(OPENTSDB_REPO):$(OPENTSDB_IMAGE_VERSION)
+	docker tag $(HBASE_IMAGE) $(OPENTSDB_IMAGE)
 
 # HDFS image is just a different name for the hbase image
 hdfs:
-	docker tag $(HBASE_REPO):$(HBASE_IMAGE_VERSION) $(HDFS_REPO):$(HDFS_IMAGE_VERSION)
+	docker tag $(HBASE_IMAGE) $(HDFS_IMAGE)
 
-push: default
-	docker push $(HBASE_REPO):$(HBASE_IMAGE_VERSION)
-	docker push $(HDFS_REPO):$(HDFS_IMAGE_VERSION)
-	docker push $(OPENTSDB_REPO):$(OPENTSDB_IMAGE_VERSION)
+push:
+	docker push $(HBASE_IMAGE)
+	docker push $(HDFS_IMAGE)
+	docker push $(OPENTSDB_IMAGE)
 
 clean:
+	-docker rmi $(HBASE_IMAGE) $(OPENTSDB_IMAGE) $(HDFS_IMAGE)
 	rm -rf build
 	docker run \
 	    --rm \
