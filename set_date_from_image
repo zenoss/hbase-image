@@ -2,7 +2,7 @@
 #   Given a docker image and a filename: if the image exists, 
 # create the file and set its date to the image's creation time;
 # otherwise ensure that the file does not exist
-date=`docker inspect --format {{.Created}} $1`
+date=`docker inspect --format {{.Created}} $1 2>/dev/null`
 if [ -z "$date" ]
     then rm -f $2
 else
