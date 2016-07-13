@@ -1,4 +1,4 @@
-include ../versions.mk
+include versions.mk
 
 ZENPIP := https://zenoss-pip.s3.amazonaws.com/packages
 
@@ -49,8 +49,8 @@ stage/hdfsMetrics-1.0.jar: | stage
 
 build/$(ZK_TARBALL): stage/$(ZK_TARBALL) | BUILD_DIR
 	docker run --rm \
-	    -v $(PWD)/..:/mnt/pwd \
-	    -w /mnt/pwd/image \
+	    -v $(PWD):/mnt/pwd \
+	    -w /mnt/pwd/ \
 	    zenoss/rpmbuild:centos7 \
 	    make docker_zk
 
@@ -65,8 +65,8 @@ docker_zk:
 
 build/$(AGGREGATED_TARBALL): stage/$(HADOOP_TARBALL) stage/$(HBASE_TARBALL) stage/$(OPENTSDB_TARBALL) stage/$(ESAPI_FILE) stage/hdfsMetrics-1.0.jar | BUILD_DIR
 	docker run --rm \
-	    -v $(PWD)/..:/mnt/pwd \
-	    -w /mnt/pwd/image \
+	    -v $(PWD):/mnt/pwd \
+	    -w /mnt/pwd \
 	    maven:3.3.3-jdk-7 \
 	    /bin/bash -c "apt-get update && apt-get -y --force-yes install make autoconf patch && make docker_hadoop"
 

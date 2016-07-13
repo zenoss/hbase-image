@@ -1,4 +1,4 @@
-# Shared definitions for makefiles in download and image subdirectories.
+# Shared definitions for makefiles in download and root subdirectories.
 HBASE_VERSION    := 1.1.4
 OPENTSDB_VERSION := 2.2.0
 HADOOP_VERSION   := 2.5.2
