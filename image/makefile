@@ -59,7 +59,7 @@ docker_zk:
 	    --exclude contrib --exclude src --exclude docs --exclude dist-maven \
 	    --exclude recipes --exclude CHANGES.txt --exclude build.xml
 	ln -s /opt/zookeeper-$(ZK_VERSION) /opt/zookeeper
-	cp run-zk.sh zookeeper-server /usr/bin
+	cd src/zookeeper; cp run-zk.sh zookeeper-server /usr/bin
 	chmod +x /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 	tar -czf build/$(ZK_TARBALL) /opt /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
@@ -96,18 +96,18 @@ docker_hadoop:
 	mkdir -p /opt/hbase/logs /opt/zenoss/log /opt/zenoss/var
 	sed -i -e 's/hbase.log.maxfilesize=256MB/hbase.log.maxfilesize=10MB/' /opt/hbase/conf/log4j.properties
 	sed -i -e 's/hbase.log.maxbackupindex=20/hbase.log.maxbackupindex=10/' /opt/hbase/conf/log4j.properties
-	cp run-hbase-standalone.sh run-hbase-master.sh run-hbase-regionserver.sh /usr/bin
+	cd src/hbase; cp run-hbase-standalone.sh run-hbase-master.sh run-hbase-regionserver.sh /usr/bin
 	chmod a+x /usr/bin/run-hbase*
 	#OpenTSDB files
-	cp configure-hbase.sh check_hbase.py /opt/opentsdb
-	cp opentsdb_service.conf /opt/zenoss/etc/supervisor/opentsdb_service.conf
-	cp create_table_splits.rb create_table_splits.sh start-opentsdb.sh start-opentsdb-client.sh \
+	cd src/opentsdb; cp configure-hbase.sh check_hbase.py /opt/opentsdb
+	cd src/opentsdb; cp opentsdb_service.conf /opt/zenoss/etc/supervisor/opentsdb_service.conf
+	cd src/opentsdb; cp create_table_splits.rb create_table_splits.sh start-opentsdb.sh start-opentsdb-client.sh \
 	    create-opentsdb-tables.sh set-opentsdb-table-ttl.sh opentsdb_watchdog.sh check_opentsdb.py \
 	    /opt/opentsdb
 	#HDFS files
 	cp stage/hdfsMetrics-1.0.jar /opt/hadoop/lib/hdfsMetrics-1.0.jar
 	mkdir -p /var/hdfs/name /var/hdfs/data /var/hdfs/secondary
-	cp run-hdfs-namenode run-hdfs-datanode run-hdfs-secondary-namenode /usr/bin
+	cd src/hdfs; cp run-hdfs-namenode run-hdfs-datanode run-hdfs-secondary-namenode /usr/bin
 	chmod a+x /usr/bin/run-hdfs*
 	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
 	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
