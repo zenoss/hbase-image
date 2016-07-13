@@ -121,9 +121,9 @@ build/Dockerfile: Dockerfile | BUILD_DIR
 hbase: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so build/Dockerfile
 	docker build -t $(HBASE_IMAGE) build
 	docker run \
-	    -v $(PWD)/init_hdfs.sh:/tmp/init_hdfs.sh \
-	    -v $(PWD)/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml \
-	    -v $(PWD)/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml \
+	    -v $(PWD)/src/init_hdfs/init_hdfs.sh:/tmp/init_hdfs.sh \
+	    -v $(PWD)/src/init_hdfs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml \
+	    -v $(PWD)/src/init_hdfs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml \
 	    --name hadoop_build_$(DATE) \
 	    $(HBASE_IMAGE) \
 	    sh /tmp/init_hdfs.sh
