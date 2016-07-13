@@ -30,13 +30,17 @@ build: hbase hdfs opentsdb
 BUILD_DIR:
 	mkdir -p build
 
-stage:
-	mkdir -p stage
+# This is a directory for caching stable downloaded files.  (I.e., files
+# whose contents are expected to never change, typically versioned files.)
+# As a cache, this directory is NOT cleared by a 'make clean' operation, 
+# in a similar fashion to the files cached by Maven.
+cache:
+	mkdir -p cache
 
-stage/%: | stage
+cache/%: | cache
 	wget -O $@ $(ZENPIP)/$(@F) || (rm $@; false)
 
-stage/hdfsMetrics-1.0.jar: | stage
+cache/hdfsMetrics-1.0.jar: | cache
 	docker run \
 	    --rm \
 	    -v $(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics \
@@ -47,7 +51,7 @@ stage/hdfsMetrics-1.0.jar: | stage
 	    mvn package
 	cp hdfsMetrics/target/hdfsMetrics-1.0-jar-with-dependencies.jar $@
 
-build/$(ZK_TARBALL): stage/$(ZK_TARBALL) | BUILD_DIR
+build/$(ZK_TARBALL): cache/$(ZK_TARBALL) | BUILD_DIR
 	docker run --rm \
 	    -v $(PWD):/mnt/pwd \
 	    -w /mnt/pwd/ \
@@ -55,7 +59,7 @@ build/$(ZK_TARBALL): stage/$(ZK_TARBALL) | BUILD_DIR
 	    make docker_zk
 
 docker_zk:
-	tar -C/opt -xzf stage/$(ZK_TARBALL) \
+	tar -C/opt -xzf cache/$(ZK_TARBALL) \
 	    --exclude contrib --exclude src --exclude docs --exclude dist-maven \
 	    --exclude recipes --exclude CHANGES.txt --exclude build.xml
 	ln -s /opt/zookeeper-$(ZK_VERSION) /opt/zookeeper
@@ -63,7 +67,7 @@ docker_zk:
 	chmod +x /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 	tar -czf build/$(ZK_TARBALL) /opt /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
-build/$(AGGREGATED_TARBALL): stage/$(HADOOP_TARBALL) stage/$(HBASE_TARBALL) stage/$(OPENTSDB_TARBALL) stage/$(ESAPI_FILE) stage/hdfsMetrics-1.0.jar | BUILD_DIR
+build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cache/$(OPENTSDB_TARBALL) cache/$(ESAPI_FILE) cache/hdfsMetrics-1.0.jar | BUILD_DIR
 	docker run --rm \
 	    -v $(PWD):/mnt/pwd \
 	    -w /mnt/pwd \
@@ -72,12 +76,12 @@ build/$(AGGREGATED_TARBALL): stage/$(HADOOP_TARBALL) stage/$(HBASE_TARBALL) stag
 
 docker_hadoop:
 	mkdir -p /opt/zenoss/etc/supervisor
-	tar -C /opt -xzf stage/$(HBASE_TARBALL) --exclude src --exclude docs --exclude '*-tests.jar'
+	tar -C /opt -xzf cache/$(HBASE_TARBALL) --exclude src --exclude docs --exclude '*-tests.jar'
 	ln -s /opt/hbase-$(HBASE_VERSION) /opt/hbase
-	cp stage/$(ESAPI_FILE) /opt/hbase/conf/ESAPI.properties
-	tar -C /opt -xzf stage/$(HADOOP_TARBALL) --exclude doc --exclude sources --exclude jdiff
+	cp cache/$(ESAPI_FILE) /opt/hbase/conf/ESAPI.properties
+	tar -C /opt -xzf cache/$(HADOOP_TARBALL) --exclude doc --exclude sources --exclude jdiff
 	ln -s /opt/hadoop-$(HADOOP_VERSION) /opt/hadoop
-	tar -C /opt -xzf stage/$(OPENTSDB_TARBALL)
+	tar -C /opt -xzf cache/$(OPENTSDB_TARBALL)
 	ln -s /opt/opentsdb-$(OPENTSDB_VERSION) /opt/opentsdb
 	cp /opt/hbase/lib/hadoop-client*.jar /opt/
 	rm -f /opt/hbase/lib/hadoop-*
@@ -105,14 +109,14 @@ docker_hadoop:
 	    create-opentsdb-tables.sh set-opentsdb-table-ttl.sh opentsdb_watchdog.sh check_opentsdb.py \
 	    /opt/opentsdb
 	#HDFS files
-	cp stage/hdfsMetrics-1.0.jar /opt/hadoop/lib/hdfsMetrics-1.0.jar
+	cp cache/hdfsMetrics-1.0.jar /opt/hadoop/lib/hdfsMetrics-1.0.jar
 	mkdir -p /var/hdfs/name /var/hdfs/data /var/hdfs/secondary
 	cd src/hdfs; cp run-hdfs-namenode run-hdfs-datanode run-hdfs-secondary-namenode /usr/bin
 	chmod a+x /usr/bin/run-hdfs*
 	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
 	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
 
-build/libhadoop.so: stage/libhadoop.so | BUILD_DIR
+build/libhadoop.so: cache/libhadoop.so | BUILD_DIR
 	cp -p $< $@ 
 
 build/Dockerfile: Dockerfile | BUILD_DIR
