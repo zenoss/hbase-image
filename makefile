@@ -34,7 +34,7 @@ stage:
 	mkdir -p stage
 
 stage/%: | stage
-	wget -O $@ $(ZENPIP)/$(@F)
+	wget -O $@ $(ZENPIP)/$(@F) || (rm $@; false)
 
 stage/hdfsMetrics-1.0.jar: | stage
 	docker run \
