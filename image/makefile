@@ -41,7 +41,7 @@ stage/hdfsMetrics-1.0.jar: | stage
 	    --rm \
 	    -v $(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics \
 	    -v $(HOME)/.m2:/root/.m2 \
-	    -v $(PWD)/maven_settings.xml:/usr/share/maven/conf/settings.xml \
+	    -v $(PWD)/hdfsMetrics/maven_settings.xml:/usr/share/maven/conf/settings.xml \
 	    -w /mnt/src/hdfsMetrics \
 	    zenoss/rpmbuild:centos7 \
 	    mvn package
