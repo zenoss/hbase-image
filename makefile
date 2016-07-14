@@ -156,6 +156,7 @@ clean:
 	docker run \
 	    --rm \
 	    -v "$(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics" \
+	    -v "$(HOME)/.m2:/root/.m2" \
 	    -w /mnt/src/hdfsMetrics \
 	    zenoss/rpmbuild:centos7 \
 	    mvn clean
