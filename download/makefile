@@ -20,20 +20,20 @@ build:
 	mkdir -p build
 
 build/$(HADOOP_TARBALL): | build
-	wget -O $@ $(HADOOP_INSTALL)
+	curl --fail -o $@ $(HADOOP_INSTALL)
 
 build/$(HBASE_TARBALL): | build
-	wget -O $@ $(HBASE_INSTALL)
+	curl --fail -o $@ $(HBASE_INSTALL)
 
 build/$(OPENTSDB_TARBALL): | build
-	wget -O $@ $(OPENTSDB_INSTALL)
+	curl --fail -o $@ $(OPENTSDB_INSTALL)
 
 build/$(ZK_TARBALL): | build
-	wget -O $@ $(ZK_INSTALL)
+	curl --fail -o $@ $(ZK_INSTALL)
 
 # There is a bug in Hbase 1.1.4 that causes this file to be missing.
 build/$(ESAPI_FILE): | build
-	wget -O $@ $(ESAPI_INSTALL)
+	curl --fail -o $@ $(ESAPI_INSTALL)
 
 push:
 	scp build/* zenpip.zendev.org:/home/pypiserver/packages

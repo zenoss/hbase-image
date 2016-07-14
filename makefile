@@ -38,14 +38,14 @@ cache:
 	mkdir -p cache
 
 cache/%: | cache
-	wget -O $@ $(ZENPIP)/$(@F) || (rm $@; false)
+	curl --fail -o $@ $(ZENPIP)/$(@F)
 
 cache/hdfsMetrics-1.0.jar: | cache
 	docker run \
 	    --rm \
-	    -v $(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics \
-	    -v $(HOME)/.m2:/root/.m2 \
-	    -v $(PWD)/hdfsMetrics/maven_settings.xml:/usr/share/maven/conf/settings.xml \
+	    -v "$(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics" \
+	    -v "$(HOME)/.m2:/root/.m2" \
+	    -v "$(PWD)/hdfsMetrics/maven_settings.xml:/usr/share/maven/conf/settings.xml" \
 	    -w /mnt/src/hdfsMetrics \
 	    zenoss/rpmbuild:centos7 \
 	    mvn package
@@ -53,7 +53,7 @@ cache/hdfsMetrics-1.0.jar: | cache
 
 build/$(ZK_TARBALL): cache/$(ZK_TARBALL) | BUILD_DIR
 	docker run --rm \
-	    -v $(PWD):/mnt/pwd \
+	    -v "$(PWD):/mnt/pwd" \
 	    -w /mnt/pwd/ \
 	    zenoss/rpmbuild:centos7 \
 	    make docker_zk
@@ -69,7 +69,7 @@ docker_zk:
 
 build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cache/$(OPENTSDB_TARBALL) cache/$(ESAPI_FILE) cache/hdfsMetrics-1.0.jar | BUILD_DIR
 	docker run --rm \
-	    -v $(PWD):/mnt/pwd \
+	    -v "$(PWD):/mnt/pwd" \
 	    -w /mnt/pwd \
 	    maven:3.3.3-jdk-7 \
 	    /bin/bash -c "apt-get update && apt-get -y --force-yes install make autoconf patch && make docker_hadoop"
@@ -125,9 +125,9 @@ build/Dockerfile: Dockerfile | BUILD_DIR
 hbase: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so build/Dockerfile
 	docker build -t $(HBASE_IMAGE) build
 	docker run \
-	    -v $(PWD)/src/init_hdfs/init_hdfs.sh:/tmp/init_hdfs.sh \
-	    -v $(PWD)/src/init_hdfs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml \
-	    -v $(PWD)/src/init_hdfs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml \
+	    -v "$(PWD)/src/init_hdfs/init_hdfs.sh:/tmp/init_hdfs.sh" \
+	    -v "$(PWD)/src/init_hdfs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml" \
+	    -v "$(PWD)/src/init_hdfs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml" \
 	    --name hadoop_build_$(DATE) \
 	    $(HBASE_IMAGE) \
 	    sh /tmp/init_hdfs.sh
@@ -155,7 +155,8 @@ clean:
 	rm -rf build
 	docker run \
 	    --rm \
-	    -v $(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics \
+	    -v "$(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics" \
+	    -v "$(HOME)/.m2:/root/.m2" \
 	    -w /mnt/src/hdfsMetrics \
 	    zenoss/rpmbuild:centos7 \
 	    mvn clean
