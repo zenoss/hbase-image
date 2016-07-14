@@ -67,7 +67,11 @@ build/$(ZK_TARBALL): cache/$(ZK_TARBALL) | BUILD_DIR
 	    zenoss/rpmbuild:centos7 \
 	    make docker_zk
 
+# The docker_zk target is intended to be run only within a docker container
+# as a result of running the recipe for the ZK_TARBALL.  It installs Zookeeper, 
+# then archives the resulting files.
 docker_zk:
+	ps -p1 -o args= | grep $@     # Ensure we are building this target in a container
 	tar -C/opt -xzf cache/$(ZK_TARBALL) \
 	    --exclude contrib --exclude src --exclude docs --exclude dist-maven \
 	    --exclude recipes --exclude CHANGES.txt --exclude build.xml
@@ -81,9 +85,13 @@ build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cach
 	    -v "$(PWD):/mnt/pwd" \
 	    -w /mnt/pwd \
 	    maven:3.3.3-jdk-7 \
-	    /bin/bash -c "apt-get update && apt-get -y --force-yes install make autoconf patch && make docker_hadoop"
+	    /bin/bash -c "apt-get update && apt-get -y --force-yes install make autoconf patch && make docker_aggregated"
 
-docker_hadoop:
+# The docker_aggregated target is intended to be run only within a docker container
+# as a result of running the recipe for the AGGREGATED_TARBALL.  It installs Hadoop, HBase, 
+# and OpenTSDB, then archives the resulting files.
+docker_aggregated:
+	ps -p1 -o args= | grep $@     # Ensure we are building this target in a container
 	mkdir -p /opt/zenoss/etc/supervisor
 	tar -C /opt -xzf cache/$(HBASE_TARBALL) --exclude src --exclude docs --exclude '*-tests.jar'
 	ln -s /opt/hbase-$(HBASE_VERSION) /opt/hbase
