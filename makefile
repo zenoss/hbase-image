@@ -38,7 +38,7 @@ cache:
 	mkdir -p cache
 
 cache/%: | cache
-	wget -O $@ $(ZENPIP)/$(@F) || (rm $@; false)
+	curl --fail -o $@ $(ZENPIP)/$(@F)
 
 cache/hdfsMetrics-1.0.jar: | cache
 	docker run \
