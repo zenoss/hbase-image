@@ -1,8 +1,37 @@
+# hdfs-image/makefile
+#
+#   This makefile is responsible for building the hbase, hdfs, ond opentsdb 
+# images for the Zenoss service. 
+#
+#   The output of running with the 'build' target will be the three images.
+# As part of the process, several caches are created: the 'cache' directory
+# containing a cache of non-volatile source files downloaded from zenpip, and
+# the 'build' directory, containing volatile intermediate files based on the 
+# cached files.  The 'cache' and 'build' directories are created via "order-only"
+# prerequisites, described below.  
+#
+# A 'sentinel' directoy is created with files which track the presence of and 
+# modification date of the three images.  These files are use to determine whether
+# a given image needs to be rebuilt.
+#
+# Several of the targets invoke docker to create a tarball containing the results
+# of some operations (such as installing software).
+#
+# Order-only prerequisites: This is discussed here as many are not familiar with 
+# them. These prerequisites indicate that the prereq should be built if it not 
+# present but that the date on the prereq should not be used to trigger.  
+# Order-only prereqs are used to ensure that a directory is created before any
+# files are placed in it.  All prereqs following the pipe operater (|) in the list
+# of prereqs are order-only.  See 
+#   https://www.gnu.org/software/make/manual/html_node/Prerequisite-Types.html
+
+
 include versions.mk
 
-ZENPIP := https://zenoss-pip.s3.amazonaws.com/packages
 
-# Internal zenpip server
+
+ZENPIP := https://zenoss-pip.s3.amazonaws.com/packages
+# Internal zenpip server, in case you don't want to wait for s3
 # ZENPIP := http://zenpip.zendev.org/packages
 
 HBASE_REPO?=zenoss/hbase
@@ -13,9 +42,10 @@ HBASE_IMAGE    := $(HBASE_REPO):$(IMAGE_VERSION)
 HDFS_IMAGE     := $(HDFS_REPO):$(IMAGE_VERSION)
 OPENTSDB_IMAGE := $(OPENTSDB_REPO):$(IMAGE_VERSION)
 
-# Initialize the hbase, hdfs, and opentsdb placeholder files.
-# These files match the existence and date of the corresponding
-# images for the make process to use in generating dependencies.
+# Initialize the hbase, hdfs, and opentsdb placeholder files. These files match 
+# the existence and date of the corresponding images for the make process to 
+# use in determining when a file is out of date.  Using the := operator ensures 
+# that each of these commands will execute exactly once when make is started.
 DUMMY := $(shell mkdir -p -m 0777 sentinel)
 DUMMY := $(shell ./set_date_from_image $(HBASE_IMAGE) sentinel/hbase)
 DUMMY := $(shell ./set_date_from_image $(HDFS_IMAGE) sentinel/hdfs)
