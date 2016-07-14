@@ -28,7 +28,7 @@
 
 include versions.mk
 
-
+BUILD_IMAGE := zenoss/build-tools:0.0.2
 
 ZENPIP := https://zenoss-pip.s3.amazonaws.com/packages
 # Internal zenpip server, in case you don't want to wait for s3
@@ -86,7 +86,7 @@ cache/hdfsMetrics-1.0.jar: | cache
 	    -v "$(HOME)/.m2:/root/.m2" \
 	    -v "$(PWD)/hdfsMetrics/maven_settings.xml:/usr/share/maven/conf/settings.xml" \
 	    -w /mnt/src/hdfsMetrics \
-	    zenoss/rpmbuild:centos7 \
+	    $(BUILD_IMAGE) \
 	    mvn package
 	cp hdfsMetrics/target/hdfsMetrics-1.0-jar-with-dependencies.jar $@
 
@@ -94,7 +94,7 @@ build/$(ZK_TARBALL): cache/$(ZK_TARBALL) | BUILD_DIR
 	docker run --rm \
 	    -v "$(PWD):/mnt/pwd" \
 	    -w /mnt/pwd/ \
-	    zenoss/rpmbuild:centos7 \
+	    $(BUILD_IMAGE) \
 	    make docker_zk
 
 # The docker_zk target is intended to be run only within a docker container
@@ -114,8 +114,8 @@ build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cach
 	docker run --rm \
 	    -v "$(PWD):/mnt/pwd" \
 	    -w /mnt/pwd \
-	    maven:3.3.3-jdk-7 \
-	    /bin/bash -c "apt-get update && apt-get -y --force-yes install make autoconf patch && make docker_aggregated"
+	    $(BUILD_IMAGE) \
+	    make docker_aggregated
 
 # The docker_aggregated target is intended to be run only within a docker container
 # as a result of running the recipe for the AGGREGATED_TARBALL.  It installs Hadoop, HBase, 
@@ -205,7 +205,7 @@ clean:
 	    -v "$(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics" \
 	    -v "$(HOME)/.m2:/root/.m2" \
 	    -w /mnt/src/hdfsMetrics \
-	    zenoss/rpmbuild:centos7 \
+	    $(BUILD_IMAGE) \
 	    mvn clean
 
 # Generate a make failure if the VERSION string contains "-<some letters>"
