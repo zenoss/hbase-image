@@ -9,9 +9,9 @@ HBASE_REPO?=zenoss/hbase
 HDFS_REPO?=zenoss/hdfs
 OPENTSDB_REPO?=zenoss/opentsdb
 
-HBASE_IMAGE    := $(HBASE_REPO):$(HBASE_IMAGE_VERSION)
-HDFS_IMAGE     := $(HDFS_REPO):$(HDFS_IMAGE_VERSION)
-OPENTSDB_IMAGE := $(OPENTSDB_REPO):$(OPENTSDB_IMAGE_VERSION)
+HBASE_IMAGE    := $(HBASE_REPO):$(IMAGE_VERSION)
+HDFS_IMAGE     := $(HDFS_REPO):$(IMAGE_VERSION)
+OPENTSDB_IMAGE := $(OPENTSDB_REPO):$(IMAGE_VERSION)
 
 # Initialize the hbase, hdfs, and opentsdb placeholder files.
 # These files match the existence and date of the corresponding
@@ -163,15 +163,13 @@ clean:
 
 # Generate a make failure if the VERSION string contains "-<some letters>"
 verifyVersion:
-	@./verifyVersion.sh $(HBASE_IMAGE_VERSION)
-	@./verifyVersion.sh $(HDFS_IMAGE_VERSION)
-	@./verifyVersion.sh $(OPENTSDB_IMAGE_VERSION)
+	@./verifyVersion.sh $(IMAGE_VERSION)
 
 # Generate a make failure if the image(s) already exist
 verifyImage:
-	@./verifyImage.sh $(HBASE_REPO) $(HBASE_IMAGE_VERSION)
-	@./verifyImage.sh $(HDFS_REPO) $(HDFS_IMAGE_VERSION)
-	@./verifyImage.sh $(OPENTSDB_REPO) $(OPENTSDB_IMAGE_VERSION)
+	@./verifyImage.sh $(HBASE_REPO) $(IMAGE_VERSION)
+	@./verifyImage.sh $(HDFS_REPO) $(IMAGE_VERSION)
+	@./verifyImage.sh $(OPENTSDB_REPO) $(IMAGE_VERSION)
 
 # Do not release if the image version is invalid
 # This target is intended for use when trying to build/publish images from the master branch

@@ -46,7 +46,7 @@ The version convention is for the `develop` branch to have the next release vers
   `<release_name>` will be the new version in `master`, i.e. `1.1.1`.
   *  `git flow release start <release_name>`
 
-4. Update the `*_IMAGE_VERSION` variables in the [versions.mk file](./versions.mk). e.g set them to `1.1.1`
+4. Update the `IMAGE_VERSION` variable in the [versions.mk file](./versions.mk). e.g set it to `1.1.1`
 
 5. run `make build` to make sure everything builds properly.
 
