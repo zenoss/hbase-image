@@ -8,7 +8,7 @@ ZK_VERSION          := 3.4.5
 HDFSMETRICS_VERSION := 1.0
 
 # Image used as the base from which the output images are built
-BASE_IMAGE       := zenoss/centos-base:1.0.2-java
+BASE_IMAGE       := zenoss/centos-base:1.1.0-java
 
 # Version of the output images
 IMAGE_VERSION    := 24.0.0-dev

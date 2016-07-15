@@ -30,7 +30,7 @@ include versions.mk
 
 # Image used for builds in docker containers.
 # Note that this variable is exported for hdfsMetrics recursive make invocations.
-export BUILD_IMAGE := zenoss/build-tools:0.0.2
+export BUILD_IMAGE := zenoss/build-tools:0.0.3
 
 ZENPIP := https://zenoss-pip.s3.amazonaws.com/packages
 # Internal zenpip server, in case you don't want to wait for s3
