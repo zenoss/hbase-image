@@ -141,6 +141,8 @@ docker_aggregated:
 	ln -s /opt/hadoop/lib/$(HDFSMETRICS_JAR) /opt/hbase/lib/$(HDFSMETRICS_JAR)
 	mkdir -p /var/hbase
 	mkdir -p /opt/hbase/logs /opt/zenoss/log /opt/zenoss/var
+	mkdir -p /opt/hbase/lib/native/Linux-amd64-64
+	ln -s /opt/hadoop/lib/native/libhadoop.so /opt/hbase/lib/native/Linux-amd64-64
 	sed -i -e 's/hbase.log.maxfilesize=256MB/hbase.log.maxfilesize=10MB/' /opt/hbase/conf/log4j.properties
 	sed -i -e 's/hbase.log.maxbackupindex=20/hbase.log.maxbackupindex=10/' /opt/hbase/conf/log4j.properties
 	cd src/hbase; cp run-hbase-standalone.sh run-hbase-master.sh run-hbase-regionserver.sh /usr/bin
@@ -159,9 +161,6 @@ docker_aggregated:
 	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
 	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
 
-build/libhadoop.so: cache/libhadoop.so | BUILD_DIR
-	cp -p $< $@ 
-
 build/Dockerfile: Dockerfile.in | BUILD_DIR
 	sed $< >$@ \
 	    -e 's~{{BASE_IMAGE}}~$(BASE_IMAGE)~' \
@@ -172,7 +171,7 @@ build/Dockerfile: Dockerfile.in | BUILD_DIR
 
 
 # Build the hbase image and initialize HDFS
-sentinel/hbase: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so build/Dockerfile
+sentinel/hbase: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/Dockerfile
 	docker build -t $(HBASE_IMAGE) build
 	docker run \
 	    -v "$(PWD)/src/init_hdfs/init_hdfs.sh:/tmp/init_hdfs.sh" \
