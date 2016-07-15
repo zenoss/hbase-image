@@ -81,9 +81,10 @@ cache:
 cache/%: | cache
 	curl --fail -o $@ $(ZENPIP)/$(@F)
 
+# Note: the version in the hdfsMetrics pom.xml *must* match $HDFSMETRICS_VERSION
 cache/$(HDFSMETRICS_JAR): | cache
 	cd hdfsMetrics; make build
-	cp hdfsMetrics/target/hdfsMetrics-1.0-jar-with-dependencies.jar $@
+	cp hdfsMetrics/target/hdfsMetrics-$(HDFSMETRICS_VERSION)-jar-with-dependencies.jar $@
 
 build/$(ZK_TARBALL): cache/$(ZK_TARBALL) | BUILD_DIR
 	docker run --rm \
@@ -105,7 +106,7 @@ docker_zk:
 	chmod +x /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 	tar -czf build/$(ZK_TARBALL) /opt /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
-build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cache/$(OPENTSDB_TARBALL) cache/$(ESAPI_FILE) cache/hdfsMetrics-1.0.jar | BUILD_DIR
+build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cache/$(OPENTSDB_TARBALL) cache/$(ESAPI_FILE) cache/$(HDFSMETRICS_JAR) | BUILD_DIR
 	docker run --rm \
 	    -v "$(PWD):/mnt/pwd" \
 	    -w /mnt/pwd \
@@ -137,7 +138,7 @@ docker_aggregated:
 	rm -rf /opt/opentsdb-$(OPENTSDB_VERSION)/build/gwt-unitCache /opt/opentsdb-$(OPENTSDB_VERSION)/build/third_party/gwt/gwt-dev-*.jar
 	bash -c "rm -rf /opt/hadoop/share/hadoop/{httpfs,mapreduce,tools,yarn}"
 	#HBase files
-	ln -s /opt/hadoop/lib/hdfsMetrics-1.0.jar /opt/hbase/lib/hdfsMetrics-1.0.jar
+	ln -s /opt/hadoop/lib/$(HDFSMETRICS_JAR) /opt/hbase/lib/$(HDFSMETRICS_JAR)
 	mkdir -p /var/hbase
 	mkdir -p /opt/hbase/logs /opt/zenoss/log /opt/zenoss/var
 	sed -i -e 's/hbase.log.maxfilesize=256MB/hbase.log.maxfilesize=10MB/' /opt/hbase/conf/log4j.properties
@@ -151,7 +152,7 @@ docker_aggregated:
 	    create-opentsdb-tables.sh set-opentsdb-table-ttl.sh opentsdb_watchdog.sh check_opentsdb.py \
 	    /opt/opentsdb
 	#HDFS files
-	cp cache/hdfsMetrics-1.0.jar /opt/hadoop/lib/hdfsMetrics-1.0.jar
+	cp cache/$(HDFSMETRICS_JAR) /opt/hadoop/lib/$(HDFSMETRICS_JAR)
 	mkdir -p /var/hdfs/name /var/hdfs/data /var/hdfs/secondary
 	cd src/hdfs; cp run-hdfs-namenode run-hdfs-datanode run-hdfs-secondary-namenode /usr/bin
 	chmod a+x /usr/bin/run-hdfs*
