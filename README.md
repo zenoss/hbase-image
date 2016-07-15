@@ -1,7 +1,10 @@
 # hbase-image 
 
 Centos image with hdfs, hbase, and opentsdb installed. A single docker image with three aliases is created from this project: 
-_zenoss/hbase_, _zenoss/hdfs_, and _zenoss/opentsdb_.  
+_zenoss/hbase_, _zenoss/hdfs_, and _zenoss/opentsdb_.
+
+The _download_ subdirectory contains facilities for managing the third-party components from which these images are built.
+Please see the [README file](./download/README.md) for more details.
 
 # Building
 
