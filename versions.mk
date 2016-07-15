@@ -1,12 +1,19 @@
 # Shared definitions for makefiles in download and root subdirectories.
+
+# Versions of third party components used in building the output images
 HBASE_VERSION       := 1.1.4
 OPENTSDB_VERSION    := 2.2.0
 HADOOP_VERSION      := 2.5.2
 ZK_VERSION          := 3.4.5
 HDFSMETRICS_VERSION := 1.0
 
+# Image used as the base from which the output images are built
+BASE_IMAGE       := zenoss/centos-base:1.0.2-java
+
+# Version of the output images
 IMAGE_VERSION    := 24.0.0-dev
 
+# Names of third-party component artifacts
 HBASE_TARBALL    := hbase-$(HBASE_VERSION)-bin.tar.gz
 OPENTSDB_TARBALL := opentsdb-$(OPENTSDB_VERSION).tar.gz
 HADOOP_TARBALL   := hadoop-$(HADOOP_VERSION).tar.gz

@@ -162,8 +162,14 @@ docker_aggregated:
 build/libhadoop.so: cache/libhadoop.so | BUILD_DIR
 	cp -p $< $@ 
 
-build/Dockerfile: Dockerfile | BUILD_DIR
-	cp $< $@
+build/Dockerfile: Dockerfile.in | BUILD_DIR
+	sed $< >$@ \
+	    -e 's~{{BASE_IMAGE}}~$(BASE_IMAGE)~' \
+	    -e 's~{{HADOOP_VERSION}}~$(HADOOP_VERSION)~' \
+	    -e 's~{{HBASE_VERSION}}~$(HBASE_VERSION)~' \
+	    -e 's~{{OPENTSDB_VERSION}}~$(OPENTSDB_VERSION)~' \
+	    -e 's~{{ZK_VERSION}}~$(ZK_VERSION)~' \
+
 
 # Build the hbase image and initialize HDFS
 sentinel/hbase: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/libhadoop.so build/Dockerfile
