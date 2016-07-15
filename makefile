@@ -28,7 +28,9 @@
 
 include versions.mk
 
-BUILD_IMAGE := zenoss/build-tools:0.0.2
+# Image used for builds in docker containers.
+# Note that this variable is exported for hdfsMetrics recursive make invocations.
+export BUILD_IMAGE := zenoss/build-tools:0.0.2
 
 ZENPIP := https://zenoss-pip.s3.amazonaws.com/packages
 # Internal zenpip server, in case you don't want to wait for s3
@@ -79,15 +81,8 @@ cache:
 cache/%: | cache
 	curl --fail -o $@ $(ZENPIP)/$(@F)
 
-cache/hdfsMetrics-1.0.jar: | cache
-	docker run \
-	    --rm \
-	    -v "$(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics" \
-	    -v "$(HOME)/.m2:/root/.m2" \
-	    -v "$(PWD)/hdfsMetrics/maven_settings.xml:/usr/share/maven/conf/settings.xml" \
-	    -w /mnt/src/hdfsMetrics \
-	    $(BUILD_IMAGE) \
-	    mvn package
+cache/$(HDFSMETRICS_JAR): | cache
+	cd hdfsMetrics; make build
 	cp hdfsMetrics/target/hdfsMetrics-1.0-jar-with-dependencies.jar $@
 
 build/$(ZK_TARBALL): cache/$(ZK_TARBALL) | BUILD_DIR
@@ -200,13 +195,7 @@ push:
 clean:
 	-docker rmi $(HBASE_IMAGE) $(OPENTSDB_IMAGE) $(HDFS_IMAGE)
 	rm -rf build sentinel
-	docker run \
-	    --rm \
-	    -v "$(PWD)/hdfsMetrics:/mnt/src/hdfsMetrics" \
-	    -v "$(HOME)/.m2:/root/.m2" \
-	    -w /mnt/src/hdfsMetrics \
-	    $(BUILD_IMAGE) \
-	    mvn clean
+	cd hdfsMetrics; make clean
 
 # Generate a make failure if the VERSION string contains "-<some letters>"
 verifyVersion:
