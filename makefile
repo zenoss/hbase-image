@@ -118,46 +118,48 @@ build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cach
 # and OpenTSDB, then archives the resulting files.
 docker_aggregated:
 	ps -p1 -o args= | grep $@     # Ensure we are building this target in a container
-	mkdir -p /opt/zenoss/etc/supervisor
+	# Hadoop/HDFS
+	tar -C /opt -xzf cache/$(HADOOP_TARBALL) --exclude doc --exclude sources --exclude jdiff
+	ln -s /opt/hadoop-$(HADOOP_VERSION) /opt/hadoop
+	cp cache/$(HDFSMETRICS_JAR) /opt/hadoop/lib/$(HDFSMETRICS_JAR)
+	cd src/hdfs; cp run-hdfs-namenode run-hdfs-datanode run-hdfs-secondary-namenode /usr/bin
+	chmod a+x /usr/bin/run-hdfs*
+	mkdir -p /var/hdfs/name /var/hdfs/data /var/hdfs/secondary
+	# HBase
 	tar -C /opt -xzf cache/$(HBASE_TARBALL) --exclude src --exclude docs --exclude '*-tests.jar'
 	ln -s /opt/hbase-$(HBASE_VERSION) /opt/hbase
 	cp cache/$(ESAPI_FILE) /opt/hbase/conf/ESAPI.properties
-	tar -C /opt -xzf cache/$(HADOOP_TARBALL) --exclude doc --exclude sources --exclude jdiff
-	ln -s /opt/hadoop-$(HADOOP_VERSION) /opt/hadoop
-	tar -C /opt -xzf cache/$(OPENTSDB_TARBALL)
-	ln -s /opt/opentsdb-$(OPENTSDB_VERSION) /opt/opentsdb
+	mkdir -p /var/hbase
+	mkdir -p /opt/hbase/logs /opt/zenoss/log /opt/zenoss/var
+	sed -i -e 's/hbase.log.maxfilesize=256MB/hbase.log.maxfilesize=10MB/' /opt/hbase/conf/log4j.properties
+	sed -i -e 's/hbase.log.maxbackupindex=20/hbase.log.maxbackupindex=10/' /opt/hbase/conf/log4j.properties
+	cd src/hbase; cp run-hbase-standalone.sh run-hbase-master.sh run-hbase-regionserver.sh /usr/bin
+	chmod a+x /usr/bin/run-hbase*
+	# HBase -> Hadoop dependencies
 	cp /opt/hbase/lib/hadoop-client*.jar /opt/
 	rm -f /opt/hbase/lib/hadoop-*
 	mv /opt/hadoop-client*.jar /opt/hbase/lib/
+	ln -s /opt/hadoop/lib/$(HDFSMETRICS_JAR) /opt/hbase/lib/$(HDFSMETRICS_JAR)
 	ln -s /opt/hadoop/share/hadoop/common/hadoop-*.jar /opt/hbase/lib/
 	ln -s /opt/hadoop/share/hadoop/hdfs/hadoop-*.jar /opt/hbase/lib
 	cp /opt/hadoop/share/hadoop/mapreduce/hadoop-*.jar /opt/hbase/lib/
 	cp /opt/hadoop/share/hadoop/tools/lib/hadoop-*.jar /opt/hbase/lib/
 	cp /opt/hadoop/share/hadoop/yarn/hadoop-*.jar /opt/hbase/lib/
-	cd /opt/opentsdb-$(OPENTSDB_VERSION) && COMPRESSION=NONE HBASE_HOME=/opt/hbase-$(HBASE_VERSION) ./build.sh
-	rm -rf /opt/opentsdb-$(OPENTSDB_VERSION)/build/gwt-unitCache /opt/opentsdb-$(OPENTSDB_VERSION)/build/third_party/gwt/gwt-dev-*.jar
 	bash -c "rm -rf /opt/hadoop/share/hadoop/{httpfs,mapreduce,tools,yarn}"
-	#HBase files
-	ln -s /opt/hadoop/lib/$(HDFSMETRICS_JAR) /opt/hbase/lib/$(HDFSMETRICS_JAR)
-	mkdir -p /var/hbase
-	mkdir -p /opt/hbase/logs /opt/zenoss/log /opt/zenoss/var
 	mkdir -p /opt/hbase/lib/native/Linux-amd64-64
 	ln -s /opt/hadoop/lib/native/libhadoop.so /opt/hbase/lib/native/Linux-amd64-64
-	sed -i -e 's/hbase.log.maxfilesize=256MB/hbase.log.maxfilesize=10MB/' /opt/hbase/conf/log4j.properties
-	sed -i -e 's/hbase.log.maxbackupindex=20/hbase.log.maxbackupindex=10/' /opt/hbase/conf/log4j.properties
-	cd src/hbase; cp run-hbase-standalone.sh run-hbase-master.sh run-hbase-regionserver.sh /usr/bin
-	chmod a+x /usr/bin/run-hbase*
-	#OpenTSDB files
+	# OpenTSDB
+	tar -C /opt -xzf cache/$(OPENTSDB_TARBALL)
+	ln -s /opt/opentsdb-$(OPENTSDB_VERSION) /opt/opentsdb
+	cd /opt/opentsdb-$(OPENTSDB_VERSION) && COMPRESSION=NONE HBASE_HOME=/opt/hbase-$(HBASE_VERSION) ./build.sh
+	rm -rf /opt/opentsdb-$(OPENTSDB_VERSION)/build/gwt-unitCache /opt/opentsdb-$(OPENTSDB_VERSION)/build/third_party/gwt/gwt-dev-*.jar
+	mkdir -p /opt/zenoss/etc/supervisor
 	cd src/opentsdb; cp configure-hbase.sh check_hbase.py /opt/opentsdb
 	cd src/opentsdb; cp opentsdb_service.conf /opt/zenoss/etc/supervisor/opentsdb_service.conf
 	cd src/opentsdb; cp create_table_splits.rb create_table_splits.sh start-opentsdb.sh start-opentsdb-client.sh \
 	    create-opentsdb-tables.sh set-opentsdb-table-ttl.sh opentsdb_watchdog.sh check_opentsdb.py \
 	    /opt/opentsdb
-	#HDFS files
-	cp cache/$(HDFSMETRICS_JAR) /opt/hadoop/lib/$(HDFSMETRICS_JAR)
-	mkdir -p /var/hdfs/name /var/hdfs/data /var/hdfs/secondary
-	cd src/hdfs; cp run-hdfs-namenode run-hdfs-datanode run-hdfs-secondary-namenode /usr/bin
-	chmod a+x /usr/bin/run-hdfs*
+	# Output
 	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
 	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
 
