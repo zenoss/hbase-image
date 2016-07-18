@@ -1,5 +1,3 @@
 /build/
 /cache/
-/hbase
-/hdfs
-/opentsdb
+/sentinel/

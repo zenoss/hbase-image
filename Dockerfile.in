@@ -1,10 +1,6 @@
-FROM zenoss/centos-base:1.0.2-java
+FROM {{BASE_IMAGE}}
 MAINTAINER  Zenoss <dev@zenoss.com>
 
-ENV OPENTSDB_VERSION 2.2.0
-ENV HBASE_VERSION 1.1.4
-ENV HADOOP_VERSION 2.5.2
-ENV ZK_VERSION 3.4.5
 ENV JAVA_HOME /usr/lib/jvm/jre
 
 # Add application users/groups
@@ -30,13 +26,10 @@ RUN yum -y install      \
     && /sbin/scrub.sh
 
 # Install zookeeper
-ADD zookeeper-${ZK_VERSION}.tar.gz /
+ADD zookeeper-{{ZK_VERSION}}.tar.gz /
 
 # Install opentsdb, hbase, hadoop
-ADD opentsdb-${OPENTSDB_VERSION}_hbase-${HBASE_VERSION}_hadoop-${HADOOP_VERSION}.tar.gz /
+ADD opentsdb-{{OPENTSDB_VERSION}}_hbase-{{HBASE_VERSION}}_hadoop-{{HADOOP_VERSION}}.tar.gz /
 RUN chown hbase:hbase /var/hbase /opt/hbase/logs
 RUN chown -R hdfs:hdfs /opt/hadoop/ /var/hdfs
-
-# Install hadoop native lib
-ADD libhadoop.so /opt/hbase/lib/native/Linux-amd64-64/libhadoop.so
 

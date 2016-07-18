@@ -1,7 +1,10 @@
 # hbase-image 
 
 Centos image with hdfs, hbase, and opentsdb installed. A single docker image with three aliases is created from this project: 
-_zenoss/hbase_, _zenoss/hdfs_, and _zenoss/opentsdb_.  
+_zenoss/hbase_, _zenoss/hdfs_, and _zenoss/opentsdb_.
+
+The _download_ subdirectory contains facilities for managing the third-party components from which these images are built.
+Please see the [README file](./download/README.md) for more details.
 
 # Building
 
@@ -22,8 +25,8 @@ found [here](./updating-libraries.md).
 # Releasing
 
 Use git flow to release a version to the `master` branch. A jenkins job can be triggered manually to build and publish the
-images to docker hub.  During the git flow release process, update the version in the makefile by removing the `dev`
-suffix and then increment the version number in the `develop` branch.
+images to docker hub.  During the git flow release process, update the image version in [versions.mk](./versions.mk) by 
+removing the `dev` suffix and then increment the version number in the `develop` branch.
 
 ## Versioning  
 
@@ -46,7 +49,7 @@ The version convention is for the `develop` branch to have the next release vers
   `<release_name>` will be the new version in `master`, i.e. `1.1.1`.
   *  `git flow release start <release_name>`
 
-4. Update the `*_IMAGE_VERSION` variables in the [versions.mk file](./versions.mk). e.g set them to `1.1.1`
+4. Update the `IMAGE_VERSION` variable in the [versions.mk file](./versions.mk). e.g set it to `1.1.1`
 
 5. run `make build` to make sure everything builds properly.
 
