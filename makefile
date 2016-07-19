@@ -103,7 +103,6 @@ docker_zk:
 	    --exclude recipes --exclude CHANGES.txt --exclude build.xml
 	ln -s /opt/zookeeper-$(ZK_VERSION) /opt/zookeeper
 	cd src/zookeeper; cp run-zk.sh zookeeper-server /usr/bin
-	chmod +x /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 	tar -czf build/$(ZK_TARBALL) /opt /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
 build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cache/$(OPENTSDB_TARBALL) cache/$(ESAPI_FILE) cache/$(HDFSMETRICS_JAR) | BUILD_DIR
@@ -123,22 +122,17 @@ docker_aggregated:
 	ln -s /opt/hadoop-$(HADOOP_VERSION) /opt/hadoop
 	cp cache/$(HDFSMETRICS_JAR) /opt/hadoop/lib/$(HDFSMETRICS_JAR)
 	cd src/hdfs; cp run-hdfs-namenode run-hdfs-datanode run-hdfs-secondary-namenode /usr/bin
-	chmod a+x /usr/bin/run-hdfs*
 	mkdir -p /var/hdfs/name /var/hdfs/data /var/hdfs/secondary
 	# HBase
 	tar -C /opt -xzf cache/$(HBASE_TARBALL) --exclude src --exclude docs --exclude '*-tests.jar'
 	ln -s /opt/hbase-$(HBASE_VERSION) /opt/hbase
 	cp cache/$(ESAPI_FILE) /opt/hbase/conf/ESAPI.properties
-	mkdir -p /var/hbase
-	mkdir -p /opt/hbase/logs /opt/zenoss/log /opt/zenoss/var
 	sed -i -e 's/hbase.log.maxfilesize=256MB/hbase.log.maxfilesize=10MB/' /opt/hbase/conf/log4j.properties
 	sed -i -e 's/hbase.log.maxbackupindex=20/hbase.log.maxbackupindex=10/' /opt/hbase/conf/log4j.properties
 	cd src/hbase; cp run-hbase-standalone.sh run-hbase-master.sh run-hbase-regionserver.sh /usr/bin
-	chmod a+x /usr/bin/run-hbase*
+	mkdir -p /var/hbase /opt/hbase/logs
 	# HBase -> Hadoop dependencies
-	cp /opt/hbase/lib/hadoop-client*.jar /opt/
-	rm -f /opt/hbase/lib/hadoop-*
-	mv /opt/hadoop-client*.jar /opt/hbase/lib/
+	ls /opt/hbase/lib/hadoop-* | grep -v "hadoop-client.*\.jar" | xargs rm
 	ln -s /opt/hadoop/lib/$(HDFSMETRICS_JAR) /opt/hbase/lib/$(HDFSMETRICS_JAR)
 	ln -s /opt/hadoop/share/hadoop/common/hadoop-*.jar /opt/hbase/lib/
 	ln -s /opt/hadoop/share/hadoop/hdfs/hadoop-*.jar /opt/hbase/lib
@@ -154,11 +148,11 @@ docker_aggregated:
 	cd /opt/opentsdb-$(OPENTSDB_VERSION) && COMPRESSION=NONE HBASE_HOME=/opt/hbase-$(HBASE_VERSION) ./build.sh
 	rm -rf /opt/opentsdb-$(OPENTSDB_VERSION)/build/gwt-unitCache /opt/opentsdb-$(OPENTSDB_VERSION)/build/third_party/gwt/gwt-dev-*.jar
 	mkdir -p /opt/zenoss/etc/supervisor
-	cd src/opentsdb; cp configure-hbase.sh check_hbase.py /opt/opentsdb
 	cd src/opentsdb; cp opentsdb_service.conf /opt/zenoss/etc/supervisor/opentsdb_service.conf
 	cd src/opentsdb; cp create_table_splits.rb create_table_splits.sh start-opentsdb.sh start-opentsdb-client.sh \
 	    create-opentsdb-tables.sh set-opentsdb-table-ttl.sh opentsdb_watchdog.sh check_opentsdb.py \
-	    /opt/opentsdb
+	    configure-hbase.sh check_hbase.py /opt/opentsdb
+	mkdir -p /opt/zenoss/log /opt/zenoss/var
 	# Output
 	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
 	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
