@@ -171,16 +171,20 @@ build/Dockerfile: Dockerfile.in | BUILD_DIR
 
 
 # Build the hbase image and initialize HDFS
+sentinel/hbase: INTERMEDIATE_CONTAINER := hadoop_build_$(DATE)
+sentinel/hbase: INTERMEDIATE_IMAGE := hadoop_build:$(DATE)
 sentinel/hbase: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/Dockerfile
-	docker build -t $(HBASE_IMAGE) build
+	docker build -t $(INTERMEDIATE_IMAGE) build
 	docker run \
 	    -v "$(PWD)/src/init_hdfs/init_hdfs.sh:/tmp/init_hdfs.sh" \
 	    -v "$(PWD)/src/init_hdfs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml" \
 	    -v "$(PWD)/src/init_hdfs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml" \
-	    --name hadoop_build_$(DATE) \
-	    $(HBASE_IMAGE) \
+	    --name $(INTERMEDIATE_CONTAINER) \
+	    $(INTERMEDIATE_IMAGE) \
 	    sh /tmp/init_hdfs.sh
-	docker commit hadoop_build_$(DATE) $(HBASE_IMAGE)
+	docker commit $(INTERMEDIATE_CONTAINER) $(HBASE_IMAGE)
+	docker rm $(INTERMEDIATE_CONTAINER)
+	docker rmi $(INTERMEDIATE_IMAGE)
 	@./set_date_from_image $(HBASE_IMAGE) $@
 
 # OpenTSDB image is just a different name for the hbase image
