@@ -1,12 +1,15 @@
 #!/opt/hbase/bin/hbase org.jruby.Main
-# usage: ./create_table.rb tsdb 255
+# usage: ./create_table.rb tsdb f1 255
 include Java
 import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.hadoop.hbase.HTableDescriptor
+import org.apache.hadoop.hbase.HColumnDescriptor
 import org.apache.hadoop.hbase.client.HBaseAdmin
 
 tablename = ARGV[0]
-REGIONS = ARGV[1].to_i
+cfname = ARGV[1]
+REGIONS = ARGV[2].to_i
+print "regions",  REGIONS
 EXPECTED_AVERAGE_METRICS_PER_DEVICE = 150
 EXPECTED_DEVICE_COUNT = 1000
 METRICS_PER_REGION = EXPECTED_DEVICE_COUNT * EXPECTED_AVERAGE_METRICS_PER_DEVICE / REGIONS
@@ -22,8 +25,12 @@ end
 last_marker = boundary_marker(REGIONS - 1)
 first_marker = boundary_marker(1)
 
+colDesc = HColumnDescriptor.new(cfname)
+tblDesc = HTableDescriptor.new(tablename)
+tblDesc.addFamily(colDesc)
+
 HBaseAdmin.new(HBaseConfiguration.new).createTable(
-  HTableDescriptor.new(tablename),
+  tblDesc,
     convert(first_marker),
     convert(last_marker),
     REGIONS)
