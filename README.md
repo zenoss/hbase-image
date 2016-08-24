@@ -28,6 +28,6 @@ Use git flow to release a version to the `master` branch.
 
 The image version is defined in [versions.mk](./versions.mk).
 
-For Zenoss employeers, the details on using git-flow to release a version is documented on the Zenoss Engineering [web site](https://sites.google.com/a/zenoss.com/engineering/home/faq/developer-patterns/using-git-flow).
+For Zenoss employees, the details on using git-flow to release a version is documented on the Zenoss Engineering [web site](https://sites.google.com/a/zenoss.com/engineering/home/faq/developer-patterns/using-git-flow).
  After the git flow process is complete, a jenkins job can be triggered manually to build and 
  publish the images to docker hub. 
