@@ -19,7 +19,7 @@ build an image and then test it as necessary.   Once you have finished your loca
 and create a pull-request as you would normally. A Jenkins PR build will be started to verify that your changes will build in
 a Jenkins environment.
 
-One of the most common changes in this repo is updating the version of the componenet libraries.  Instructions for doing so can be 
+One of the most common changes in this repo is updating the version of the component libraries.  Instructions for doing so can be 
 found [here](./updating-libraries.md).
 
 # Releasing
