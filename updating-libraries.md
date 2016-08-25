@@ -16,7 +16,7 @@ release process.
 **2) Download the new components from source**
 
 Please see these [instructions](./download/README.md#downloading-files) in the 
-download folder for information about downloading components.  This step will dowload the 
+download folder for information about downloading components.  This action will download the 
 version of the artifact indicated in versions.mk.
 
 **3) Push the components to zenpip**
