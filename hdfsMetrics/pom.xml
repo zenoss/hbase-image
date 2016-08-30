@@ -9,6 +9,7 @@
     <version>1.0</version>
     <properties>
         <hadoop.version>2.5.2</hadoop.version>
+        <jackson.version>1.9.13</jackson.version>
     </properties>
 
 
@@ -34,6 +35,17 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.2</version>
+        </dependency>
+        <!-- ZEN-24517: Override the dependency of jersey-json 1.9 to jackson 1.8.3 -->
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-jaxrs</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-xc</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
     </dependencies>
 
