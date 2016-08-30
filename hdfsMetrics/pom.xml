@@ -36,7 +36,7 @@
             <artifactId>httpclient</artifactId>
             <version>4.5.2</version>
         </dependency>
-        <!-- ZEN-24517: Override the dependency of jersey-json 1.9 to jackson 1.8.3 -->
+        <!-- ZEN-24517: Override jackson version in order to use the same version for all jackson components. The version should be whatever hbase depends on. -->
         <dependency>
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-jaxrs</artifactId>

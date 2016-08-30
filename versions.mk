@@ -1,6 +1,9 @@
 # Shared definitions for makefiles in download and root subdirectories.
 
-# Versions of third party components used in building the output images
+# Versions of third party components used in building the output images.
+# When either of HBase or Hadoop is upgraded, check the pom file of hdfsMetrics
+# to see if we are using the right versions of other libraries, such as Jackson,
+# using a command like mvn dependency:tree -Dverbose.
 HBASE_VERSION       := 1.1.4
 OPENTSDB_VERSION    := 2.2.0
 HADOOP_VERSION      := 2.5.2
