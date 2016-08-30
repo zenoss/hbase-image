@@ -21,6 +21,16 @@ $ make hbase
 replacing hbase with the appropriate target.  This command will download the 
 relevant files to the build subdirectory
 
+## Building a test image
+
+Copying the downloaded files directly to the hbase-image/cache directory 
+allows an image to be built for validation purposes before uploading them 
+to the zenoss pip server.  To copy the tarballs to the cache directory, use 
+```
+$ make cache
+```
+then build the image using the [normal instructions](../README.md).
+
 ## Uploading files
 
 To upload the files to the zenoss pip server, the command
