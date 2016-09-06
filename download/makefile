@@ -40,3 +40,8 @@ push:
 
 clean: 
 	rm -rf build
+
+# Copy tarballs to cache directory for development purposes
+cache:
+	mkdir -p ../cache
+	cp build/* ../cache
