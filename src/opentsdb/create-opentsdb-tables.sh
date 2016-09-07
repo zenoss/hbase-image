@@ -19,7 +19,7 @@ for zk_host_port in `echo $ZK_QUORUM | tr ',' ' '` ; do
   #create hbase tables w/multi-tenancy support
   ID=$CONTROLPLANE_TENANT_ID
   wget -qO - localhost:61000/$ID-tsdb/schema && exit 0
-  /opt/opentsdb/create_table_splits.rb $ID-tsdb t 256
+  /opt/opentsdb/create_table_splits.rb $ID-tsdb t
   TSDB_TABLE=$ID-tsdb UID_TABLE=$ID-tsdb-uid TREE_TABLE=$ID-tsdb-tree META_TABLE=$ID-tsdb-meta /opt/opentsdb/create_table_splits.sh
 
   #keep trying until a successful connection occurs
