@@ -103,16 +103,16 @@ docker_zk:
 	    --exclude recipes --exclude CHANGES.txt --exclude build.xml
 	ln -s /opt/zookeeper-$(ZK_VERSION) /opt/zookeeper
 	cd src/zookeeper; cp run-zk.sh zookeeper-server /usr/bin
-	tar -czf build/$(ZK_TARBALL) /opt /usr/bin/run-zk.sh /usr/bin/zookeeper-server
+	tar -czf build/$(ZK_TARBALL) /opt/zookeeper* /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
 build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cache/$(OPENTSDB_TARBALL) cache/$(ESAPI_FILE) cache/$(HDFSMETRICS_JAR) | BUILD_DIR
-	docker run --rm \
+	docker run  \
 	    -v "$(PWD):/mnt/pwd" \
 	    -w /mnt/pwd \
 	    $(BUILD_IMAGE) \
 	    make docker_aggregated
 
-# The docker_aggregated target is intended to be run only within a docker container
+
 # as a result of running the recipe for the AGGREGATED_TARBALL.  It installs Hadoop, HBase, 
 # and OpenTSDB, then archives the resulting files.
 docker_aggregated:
@@ -154,7 +154,7 @@ docker_aggregated:
 	    configure-hbase.sh check_hbase.py /opt/opentsdb
 	mkdir -p /opt/zenoss/log /opt/zenoss/var
 	# Output
-	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase \
+	tar -czf build/$(AGGREGATED_TARBALL) /opt/hadoop* /opt/hbase/* /opt/opentsdb*  /var/hdfs /var/hbase \
 	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
 
 build/Dockerfile: Dockerfile.in | BUILD_DIR
