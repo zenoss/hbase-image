@@ -116,6 +116,8 @@ build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cach
 # as a result of running the recipe for the AGGREGATED_TARBALL.  It installs Hadoop, HBase, 
 # and OpenTSDB, then archives the resulting files.
 docker_aggregated:
+	#make sure there isn't anything in opt since it gets archived
+	rm -rf /opt/*
 	ps -p1 -o args= | grep $@     # Ensure we are building this target in a container
 	# Hadoop/HDFS
 	tar -C /opt -xzf cache/$(HADOOP_TARBALL) --exclude doc --exclude sources --exclude jdiff
@@ -154,8 +156,7 @@ docker_aggregated:
 	    configure-hbase.sh check_hbase.py /opt/opentsdb
 	mkdir -p /opt/zenoss/log /opt/zenoss/var
 	# Output
-	tar -czf build/$(AGGREGATED_TARBALL) /opt/hadoop* /opt/hbase/* /opt/opentsdb*  /var/hdfs /var/hbase \
-	    /usr/bin/run-hbase* /usr/bin/run-hdfs*
+	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase /usr/bin/run-hbase* /usr/bin/run-hdfs*
 
 build/Dockerfile: Dockerfile.in | BUILD_DIR
 	sed $< >$@ \
