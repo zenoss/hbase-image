@@ -7,5 +7,9 @@
 # License.zenoss under the directory where your Zenoss product is installed.
 #
 ##############################################################################
-/opt/opentsdb/build/tsdb uid --config /opt/zenoss/etc/opentsdb/opentsdb.conf grep . | grep -a metrics | awk -e '{print $2}' | sed -e 's/:$//'
 
+# Create a script in the zenhub container to dump the guid table
+serviced service attach zenhub su - zenoss -c "echo -e 'for entry in dmd.guid_table.items():\n print entry' > /tmp/table.dmd"
+
+# Run the script, gzipping the output to a tmp file on the host.
+serviced service attach zenhub su - zenoss -c "zendmd --script /tmp/table.dmd" | gzip > ./guidtable.gz

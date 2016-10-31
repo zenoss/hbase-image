@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+##############################################################################
+#
+# Copyright (C) Zenoss, Inc. 2016, all rights reserved.
+#
+# This content is made available according to terms specified in
+# License.zenoss under the directory where your Zenoss product is installed.
+#
+##############################################################################
 
 """
 main program to collect metric data for remediation
@@ -16,7 +24,7 @@ import argparse
 import gzip
 import logging
 from multiprocessing import Pool
-from collections import defaultdict
+import os
 import signal
 import time
 from metricAccumulator import MetricAccumulator
@@ -66,6 +74,8 @@ class MapGuidsMain(object):
         self.setup_logging()
         self.datadir = self.opts.datadir
         util.makedirectory(self.datadir)
+        self.outdir = os.path.join(self.datadir, "out")
+        self.errdir = os.path.join(self.datadir, "err")
 
 
     def setup_logging(self):
@@ -94,10 +104,11 @@ class MapGuidsMain(object):
             return f.read().splitlines()
 
     def metric_args(self):
-        outfilename = util.makefilename(self.datadir, "metric_stats", self.starttime, ".gz")
+        #outfilename = util.makefilename(self.datadir, "metric_stats", self.starttime, ".gz")
         for metric in self.metric_names():
             # logging.info("yielding WorkerArgs() on metric %", metric)
-            yield WorkerArgs(metric, outfilename, self.opts.tsdbbin, self.opts.tsdbconfig, self.datadir)
+            outfilename = util.makefilename(self.outdir, metric, self.starttime, "out.gz")
+            yield WorkerArgs(metric, outfilename, self.opts.tsdbbin, self.opts.tsdbconfig, self.datadir, self.errdir)
 
     def count_metric_names(self):
         return sum(1 for i in self.metric_names())
@@ -122,7 +133,7 @@ class MapGuidsMain(object):
         self.t = timer.Timer(self.metric_count, "Metric")
 
     def write_failed_metrics(self):
-        fm_filename = util.makefilename(self.datadir, "failed_metrics", self.starttime, ".txt" )
+        fm_filename = util.makefilename(self.outdir, "failed_metrics", self.starttime, ".txt" )
 
     def run(self):
         """
@@ -149,6 +160,7 @@ class TSDBWorker(MetricAccumulator):
         self.outfilename = args.outfile
         self.tsdb = args.tsdb
         self.datadir = args.datadir
+        self.errdir = args.errdir
 
     def info(self, msg):
         print "INFO:{}".format(msg)
@@ -179,7 +191,7 @@ class TSDBWorker(MetricAccumulator):
             # ignore log message lines
             if ' INFO ' in str:
                 return True
-            # ignor warning messages, too
+            # ignore warning messages, too
             if ' WARN ' in str:
                 return True
             self.error("received ParseError for string: {}".format(str))
@@ -188,7 +200,7 @@ class TSDBWorker(MetricAccumulator):
         return True
 
     def err_line(self, str):
-        err_fn = util.makefilename(self.datadir, self.metric, time.strftime('%Y%m%d-%H%M%S'), ".err.gz")
+        err_fn = util.makefilename(self.errdir, self.metric, time.strftime('%Y%m%d-%H%M%S'), ".err.gz")
         with gzip.open(err_fn, 'awt') as ef:
             ef.write(str)
 
@@ -201,11 +213,12 @@ class TSDBWorker(MetricAccumulator):
                 lines_written += 1
 
 class WorkerArgs(object):
-    def __init__(self, metric, outfile, tsdbbin, tsdbconfig, datadir):
+    def __init__(self, metric, outfile, tsdbbin, tsdbconfig, datadir, errdir):
         self.metric = metric
         self.tsdb = TSDBHelper(tsdbbin, tsdbconfig)
         self.outfile = outfile
         self.datadir = datadir
+        self.errdir = errdir
 
 
 class TSDBHelper(object):
@@ -222,7 +235,7 @@ class TSDBHelper(object):
 def map_metric_worker(args):
         """
         connect to opentsdb, read metric data, and write results to file
-        :param metric: name of metric to read
+        :param args: WorkerArgs object for passing params to worker
         :return: boolean - True for success, False for failure
         """
         w = TSDBWorker(args)

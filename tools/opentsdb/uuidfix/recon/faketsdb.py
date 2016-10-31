@@ -1,10 +1,16 @@
 #!/usr/bin/env python
+##############################################################################
+#
+# Copyright (C) Zenoss, Inc. 2016, all rights reserved.
+#
+# This content is made available according to terms specified in
+# License.zenoss under the directory where your Zenoss product is installed.
+#
+##############################################################################
 from __future__ import print_function
 import random
 import sys
 import time
-
-__author__ = 'morr'
 
 
 def simulate_error(m):
