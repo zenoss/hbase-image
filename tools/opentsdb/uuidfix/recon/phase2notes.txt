@@ -1,0 +1,19 @@
+Inputs:
+    mapguids.py output for historical db
+    mapguids.py output for operational db
+    zendmd guidtable dump
+
+ Format / content:
+
+ mapguids output:
+ <metric_name> <key> <GUID> <count>
+
+zendmd guidtable dump
+('GUID', 'path')
+
+Note: To disable intermingling of log messages and data:
+ replace logback.xml in /opt/opentsdb/build/src/...
+ with this one: https://github.com/oozie/opentsdb/blob/6f0ba2049c2812c1de8f18368b64598c23d1b9e7/src/logback.xml
+ (raw: https://raw.githubusercontent.com/oozie/opentsdb/6f0ba2049c2812c1de8f18368b64598c23d1b9e7/src/logback.xml)
+ (short raw: https://git.io/vXO4N)
+ and redirect stderr to file (or read from stderr)

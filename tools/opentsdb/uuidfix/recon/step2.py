@@ -10,8 +10,9 @@
 ##############################################################################
 import argparse
 import ast
-from collections import namedtuple
+import collections as c
 import gzip
+import os
 import signal
 import time
 import util
@@ -26,103 +27,34 @@ def args():
     parser = argparse.ArgumentParser(description="gather data to aid in " +
                                      "fixing opentsdb corruption" +
                                      " due to leaked UIDs")
-    parser.add_argument("-s", "--statfile",
-                        help="File with collected counts of metric keys " +
-                        "guid combinations")
     parser.add_argument("-m", "--metricfile",
                         help="File containing list of metrics to process")
-    parser.add_argument("-g", "--guidtablefile",
-                        help="file containing zendmd guid table extract")
+    # parser.add_argument("-g", "--guidtablefile",
+    #                     help="file containing zendmd guid table extract")
     parser.add_argument("-v", "--verbose", help="Make output verbose",
                         action="store_true")
-    parser.add_argument("-d", "--datadir", default="./data/",
-                        help="path to data directory")
+    parser.add_argument("-i", "--inputdir", default="./in")
+    parser.add_argument("-o", "--outputdir", default="./out")
     return parser.parse_args()
 
 class Step2Main(object):
     def __init__(self, opts):
-        self.statfile = opts.statfile
+        self.total_metrics = 0
+        self.total_files = 0
+        self.noguid_metrics = 0
+        self.noguid_files = 0
+        self.monoguid_metrics = 0
+        self.monoguid_files = 0
+        self.multiguid_metrics = 0
+        self.multiguid_files = 0
         self.starttime =  time.strftime('%Y%m%d-%H%M%S')
         # self.metrics_with_multiple_contextuuids = ()
         self.opts = opts
         self.guidtable = None
-        self.datadir = self.opts.datadir
-        util.makedirectory(self.datadir)
-        
-    def check_metric(self,metric):
-        """
-        Find all occurrences of metric in statfile.
-        Keep list of guids for each metric/path(key) pair.
-        If there are pairs with >1 guid per metric/key combo:
-            look up guids in guidtablefile.
-            If there is 1 match, save guid list and matched guid for use during migration
-            If there is no match (but > 1 guid), metric cannot be remediated yet - further processing needed
-            If there is >1 match for a metric/key combo, metric needs further processing before remediation.
-        :param metric:
-        :return:
-        """
-        lines = self.find_metric_in_file(metric, self.statfile)
-        guids = {}
-        multi_guids = False
-        for line in lines:
-            (name, key, guid, count) = line.split()
-
-            if (name, key) in guids.keys():
-                guids[(name,key)].append(guid)
-                multi_guids = True
-            else:
-                guids[(name,key)] = (guid,)
-        if multi_guids:
-            for nk, glist in  guids.iteritems():
-                matches = self.guidtable_lookup(glist) # TODO: fix this (or add interposing method) so it returns [([guid,...], path)] , or something like that.
-                if len(matches) > 1:  # TODO: not quite right. Given above, figure out whether >1 GUID matches)
-                    # TODO: womp womp - need to remediate. Write appropriate info to file.
-                elif len(matches) == 1:
-                    # TODO: success - GUID
-                else:
-                    # TODO: no matches found. Okay, if you have exactly 1 guid, but not otherwise.
-        return
-
-
-    def run(self):
-        """
-        :return:
-        """
-        d = {}
-        input_line_count = 0
-        with gzip.open(self.opts.statfile) as f:
-            MK = namedtuple("MK", ["metric", "key"])
-            for line in f:
-                input_line_count += 1
-                (m, k, contextUUID, count) = line.split()
-                if k == "None":
-                    k = None
-                if contextUUID == "None":
-                    contextUUID = None
-
-                mk = MK(metric=m, key=k)
-                if mk in d.keys():
-                    d[mk].append(contextUUID)
-                else:
-                    d[mk] = (contextUUID,)
-        print "d has {} entries.".format(len(d))
-        migrate = []
-        cleanup = []
-        for entry, val in d.iteritems():
-            #print "{}\t{}".format(repr(entry), repr(val))
-            if len(val) == 1:
-                migrate.append(entry)
-            else:
-                cleanup.append(entry)
-        print "len(migrate): {}\tlen(cleanup): {}".format(len(migrate), len(cleanup))
-
-        with gzip.open(util.makefilename(self.datadir,'ready_to_migrate',self.starttime, '.gz'),'wat') as f:
-            for line in migrate:
-                f.write(repr(line))
-
-        with gzip.open(util.makefilename(self.datadir,'need_cleanup',self.starttime, '.gz'),'wat') as f:
-            for line in cleanup:
-                f.write(repr(line))
+        self.inputdir = self.opts.inputdir
+        self.outputdir = self.opts.outputdir
+        util.makedirectory(self.outputdir)
+        self.metricfile = opts.metricfile
 
 
     def get_guidtable(self):
@@ -148,7 +80,7 @@ class Step2Main(object):
         with gzip.open(statfile, 'r') as f:
             for line in f:
                 fields = line.split()
-                if len(fields) > 0 && fields[0] == metric:
+                if len(fields) > 0 and fields[0] == metric:
                     lines.append(line)
         return lines
 
@@ -161,7 +93,134 @@ class Step2Main(object):
         return matches
 
     def run_by_metric(self):
+        for file in self.get_metricfiles():
+            self.total_files += 1
+            ms = self.getMetricStats(file)
+        print "Processed {:8} files.   monoguid: {:8} noguid: {:8} multiguid:{:8}".format(self.total_files, self.monoguid_files, self.noguid_files, self.multiguid_files)
+        print "Processed {:8} metrics. monoguid: {:8} noguid: {:8} multiguid:{:8}".format(self.total_metrics, self.monoguid_metrics, self.noguid_metrics, self.multiguid_metrics)
+
+    def dothings(self, file):
         pass
+
+    def get_metricfiles(self):
+        if self.metricfile:
+            with open(self.metricfile) as f:
+                for line in f.read().splitlines():
+                    if os.path.isfile(line):
+                        yield line
+                    else:
+                        inline = os.path.join(self.inputdir, line)
+                        if os.path.isfile(inline):
+                            yield inline
+        else:
+            for filename in os.listdir(self.inputdir):
+                yield os.path.join(self.inputdir, filename)
+
+    def getMetricStats(self, file):
+        lc = 0
+        mkt = MetricKeyTabulator()
+        with gzip.open(file) as f:
+            for line in f.read().splitlines():
+                lc +=1
+                (metric, key, guid, count) = line.split()
+                mkt.add(metric, key, guid, count)
+
+        self.report_file(mkt, file)
+
+        if self.opts.verbose:
+            print "{}: file: {} lines: {} metrics:{} metric-key pairs: {} has_multiguids: {} has_no_guids: {}".format(mkt.classify(), file, lc, len(mkt.get_metrics()), sum(1 for i in mkt.get_mkg()), mkt.has_multiguid_mks(), mkt.has_no_guids())
+
+
+
+    def report_file(self, mkt, file):
+        self.total_metrics += len(mkt.get_metrics())
+        cl = mkt.classify()
+        if cl == "NOGUID":
+            self.write_noguid(mkt, file)
+        elif cl == "MONOGUID":
+            self.write_monoguid(mkt, file)
+        elif cl == "MULTIGUID":
+            self.write_multiguid(mkt, file)
+        else:
+            raise ValueError
+
+    def write_noguid(self, mkt, file):
+        with open(self.get_output_filename("noguid_metrics"), 'awt') as f:
+            for metric in mkt.get_metrics():
+                self.noguid_metrics += 1
+                f.write("{}\n".format(metric))
+        with open(self.get_output_filename("noguid_files"), 'awt') as f:
+            self.noguid_files += 1
+            f.write("{}\n".format(file))
+
+    def write_monoguid(self, mkt, file):
+        with open(self.get_output_filename("monoguid_metrics"), 'awt') as f:
+            for metric in mkt.get_metrics():
+                self.monoguid_metrics += 1
+                f.write("{}\n".format(metric))
+        with open(self.get_output_filename("monoguid_files"), 'awt') as f:
+            self.monoguid_files += 1
+            f.write("{}\n".format(file))
+
+    def write_multiguid(self, mkt, file):
+        with open(self.get_output_filename("multiguid_metrics"), 'awt') as f:
+            for metric in mkt.get_metrics():
+                self.multiguid_metrics += 1
+                f.write("{}\n".format(metric))
+        with open(self.get_output_filename("multiguid_files"), 'awt') as f:
+            self.multiguid_files += 1
+            f.write("{}\n".format(file))
+        pass
+
+    def get_output_filename(self, str):
+        return util.makefilename(self.outputdir, str, self.starttime, ".txt")
+
+
+class MetricKeyTabulator(object):
+    def __init__(self):
+        self.metrics = set()
+        self.metric_paths = set()
+        self.metric_path_guids = c.defaultdict(set)
+
+    def add(self, metric, key, contextUUID, count):
+        self.metrics.add(metric)
+        self.metric_paths.add((metric, key))
+        if contextUUID != "None":
+            self.metric_path_guids[(metric, key)].add(contextUUID)
+
+    def get_metrics(self):
+        return self.metrics
+
+    def get_mkg(self):
+        return self.metric_path_guids
+
+    def has_no_guids(self):
+        for mk, guids in self.metric_path_guids.iteritems():
+            if len(guids) > 0:
+                return False
+        return True
+
+    def has_multiguid_mks(self):
+        for mk, guids in self.metric_path_guids.iteritems():
+            if len(guids) > 1:
+                return True
+        return False
+
+
+    def get_multiguid_mks(self):
+        for mk, guids in self.metric_path_guids.iteritems():
+            if len(guids) > 1:
+                yield(mk)
+
+    def classify(self):
+        noguids = self.has_no_guids()
+        is_corrupted = self.has_multiguid_mks()
+        if noguids:
+            return "NOGUID"
+        elif is_corrupted:
+            return "MULTIGUID"
+        else:
+            return"MONOGUID"
 
 
 if __name__ == '__main__':
