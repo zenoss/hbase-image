@@ -55,6 +55,6 @@ TO-DO:
 - move output files upon completion of metric
 - clean up unwanted files
 * test against opentsdb (incl moving tables to backup and attempting restore to new db
-* compress output files
+- compress output files
 - fix logging?
 * GUIDcheck for metrics w/GUIDS

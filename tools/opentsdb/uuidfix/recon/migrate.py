@@ -26,14 +26,14 @@ def args():
     parser.add_argument("-s", "--srcconf", default="./opentsdb.conf",
                         help="opentsdb config file for source tables")
     parser.add_argument("-d", "--destconf",
-                        default="/opt/opentsdb/build/opentsdb.conf",
+                        default="/opt/zenoss/etc/opentsdb/opentsdb.conf",
                         help="opentsdb config file for destination tables")
     parser.add_argument("-m", "--metricfile", required=True,
                         help="file containing names of metrics to migrate")
     parser.add_argument("-o", "--outputdir", default="./out",
                         help="directory for output files")
     parser.add_argument("-b", "--bin-tsdb", dest='tsdbbin',
-                        default="/opt/opentsdb/build/opentsdb/tsdb",
+                        default="/opt/opentsdb/build/tsdb",
                         help="location of opentsdb binary (tsdb)")
     parser.add_argument("--logconfig", default="./logback.xml",
                         help="logback config file to use for opentsdb")
@@ -214,11 +214,12 @@ def setup_logging(logfile):
     logger = logging.getLogger('migrate')
     logger.setLevel(logging.DEBUG)
     fh = logging.FileHandler(logfile)
-    fh.setLevel(logging.DEBUG)
+    # fh.setLevel(logging.DEBUG)
+    fh.setLevel(logging.INFO)
     sh = logging.StreamHandler()
     sh.setLevel(logging.INFO)
-    file_formatter = logging.Formatter('%(filename)s %(lineno)d - %(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    # file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # file_formatter = logging.Formatter('%(filename)s %(lineno)d - %(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_formatter = logging.Formatter('%(levelname)s - %(name)s - %(asctime)s - %(message)s')
     stream_formatter = logging.Formatter('%(levelname)s - %(message)s')
     # stream_formatter = logging.Formatter('%(filename)s %(lineno)d - %(levelname)s - %(message)s')
     fh.setFormatter(file_formatter)

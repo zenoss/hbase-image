@@ -8,6 +8,7 @@
 # License.zenoss under the directory where your Zenoss product is installed.
 #
 ##############################################################################
+import gzip
 import logging
 import os
 import shutil
@@ -61,8 +62,8 @@ class TSDBWorker(object):
             self.logger.debug("removing %s", errfile)
             os.remove(errfile)
         else:
-            shutil.move(errfile, self.err_dir)
-            shutil.move(outfile, self.err_dir)
+            self.archive_file(errfile, self.err_dir)
+            self.archive_file(outfile, self.err_dir)
         return status
 
     def import_metric(self):
@@ -82,15 +83,22 @@ class TSDBWorker(object):
             self.logger.debug("removing %s", datafile)
             os.remove(datafile)
         else:
+            self.logger.info("error importing metric %s", self.metric_name)
             # no success, move out/err files to error directory
-            self.logger.debug("moving %s to %s", errfile, self.err_dir)
-            shutil.move(errfile, self.err_dir)
-            self.logger.debug("moving %s to %s", outfile, self.err_dir)
-            shutil.move(outfile, self.err_dir)
-            self.logger.debug("moving %s to %s", datafile, self.err_dir)
-            shutil.move(datafile, self.err_dir)
+            self.archive_file(errfile, self.err_dir)
+            self.archive_file(outfile, self.err_dir)
+            self.archive_file(datafile, self.err_dir)
         return status
 
+    def archive_file(self, orig_file, to, compress=True):
+        self.logger.debug("moving %s to %s", orig_file, self.err_dir)
+        if compress:
+            srcfilename = os.path.basename(orig_file)
+            with open(orig_file, 'rb') as f_in, gzip.open(os.path.join(self.err_dir, "{}.gz".format(srcfilename)), 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+            os.remove(orig_file)
+        else:
+            shutil.move(orig_file, to)
     # def run_command(self, cmd, fn_base):
     def run_command(self, cmd, operation):
         stdoutfile = self.get_outfilefullname(operation)
@@ -106,13 +114,6 @@ class TSDBWorker(object):
         if self.export_metric():
             self.logger.info("importing metric %s", self.metric_name)
             status =  self.import_metric()
-            if status:
-                pass
-                # # all was good, so we can remove the datafile
-                # datafile = self.get_outfilefullname('export')
-                #
-                # self.logger.debug("removing %s", datafile)
-                # os.remove(datafile)
         else:
             self.logger.info("error exporting metric %s", self.metric_name)
             return False
