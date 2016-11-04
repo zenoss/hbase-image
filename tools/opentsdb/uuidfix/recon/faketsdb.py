@@ -14,10 +14,12 @@ import time
 
 
 def simulate_error(m):
-    print('Exception on stderr blah blah blah', file=sys.stderr)
+    print('ERROR on stderr blah blah blah', file=sys.stderr)
+
 
 def simulate_bad_data(m):
-    print("Exception blah blah blah")
+    print("ERROR blah blah blah")
+
 
 
 def simulate_good_data(m):
@@ -27,18 +29,41 @@ def simulate_good_data(m):
                                          "contextUUID=012345{}".format(i % 7),
                                          "key=/argle/bargle/foo/" + m),
               file=sys.stdout)
-    pass
 
-def main():
+
+
+def simulate_scan(argv):
     matches = (x for x in sys.argv if 'metric' in x)
     for m in matches:
-        time.sleep(random.random() * 3)
-        if '3' in m:
+        time.sleep(random.random() * 1)
+        if 'err' in m:
             simulate_error(m)
-        elif '7' in m:
+            exit(1)
+        elif 'bad' in m:
             simulate_bad_data(m)
+            exit(1)
         else:
             simulate_good_data(m)
+
+
+def simulate_import(argv):
+    if any('boom' in x for x in argv):
+        #simulate exception
+        print("ERROR going boom!", file=sys.stderr)
+        raise Exception('boom')
+    print("simulate_import({})".format(argv))
+
+
+
+def main():
+    print("faketsdb call {}".format(sys.argv))
+    if "scan" in sys.argv:
+        simulate_scan(sys.argv)
+    elif "import" in sys.argv:
+        simulate_import(sys.argv)
+    else:
+        print()
+
 
 
 if __name__ == '__main__':

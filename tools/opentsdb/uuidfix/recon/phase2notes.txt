@@ -17,3 +17,4 @@ Note: To disable intermingling of log messages and data:
  (raw: https://raw.githubusercontent.com/oozie/opentsdb/6f0ba2049c2812c1de8f18368b64598c23d1b9e7/src/logback.xml)
  (short raw: https://git.io/vXO4N)
  and redirect stderr to file (or read from stderr)
+

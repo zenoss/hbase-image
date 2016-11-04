@@ -35,9 +35,11 @@ def handle_pdb(signal, frame):
     import pdb
     pdb.set_trace()
 
+
 def makedirectory(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
 
 class ProcessFailedError(Exception):
     pass

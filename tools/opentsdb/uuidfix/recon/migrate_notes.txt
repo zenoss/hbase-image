@@ -1,0 +1,60 @@
+Migrate process:
+* validate params
+* iterate metric names
+
+move log config (logback.xml) to appropriate place
+
+SCAN:
+log 'scanning metricname to file'
+tsdb scan ... --import metricname > file (with from config)
+? watch stderr for problems ?
+? gather data from stream as it goes to file ? - stats / guid list
+stderr >> <logdir>/<metricname>.err
+log 'done scanning metricname to file'
+tsdb import ... file  (with to config)  to working dir
+
+IMPORT
+log importing metricname to db
+tsdb import ...<filename>
+MONITOR FOR ERRORS (on error, import will stop, but data up to error point has been imported)
+(grep stderr for: ERROR)
+ON ERROR:
+    copy import file to reprocess location (and gzip)
+    copy import stdout, stderr to reprocess location (and gzip)
+    log error (log file and/or write metric name to reprocess file)
+
+on success:
+    log success
+    clean up - remove data file, move stdout, stderr to archive location (and gzip)
+
+==================
+
+export fails when:
+tsdb scan process returns nonzero
+'ERROR' shows up in stderr
+exception occurs during processing
+
+import fails when:
+tsdb import process returns nonzero
+'ERROR' shows up in stderr
+exception occurs during processing
+
+after run, we want:
+* list of metrics that were successful
+* list of metrics that failed export
+* list of metrics that failed import
+* stderr for both of above
+* data files (.gz) for failed imports (may need for reprocessing)
+* no data files for successful metrics
+? keep or delete stderr / log files for successful metrics
+
+
+TO-DO:
+- move logback.xml file before start
+* add watchers to stderr for import/export
+- move output files upon completion of metric
+- clean up unwanted files
+* test against opentsdb (incl moving tables to backup and attempting restore to new db
+* compress output files
+- fix logging?
+* GUIDcheck for metrics w/GUIDS

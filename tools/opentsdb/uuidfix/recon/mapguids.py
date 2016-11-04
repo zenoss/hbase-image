@@ -148,7 +148,9 @@ class MapGuidsMain(object):
             self.metric_done(r[0], r[1])
 
 
-        print "all done! got {} results in {} seconds. {} success and {} fail".format(self.resultcount, self.t.ElapsedTime(), self.success, self.fail)
+        print "all done! got {} results in {} seconds. {} success and {} fail"\
+            .format(self.resultcount, self.t.ElapsedTime(), self.success,
+                    self.fail)
         self.write_failed_metrics()
         print "Failed metrics: {}".format(self.fail_metrics)
 
@@ -179,7 +181,8 @@ class TSDBWorker(MetricAccumulator):
             self.error("Process {} failed: {}".format(cmd, err))
             return False
         except ValueError as err:
-            self.error("Caught ValueError running command {}: {}".format(cmd, err))
+            self.error("Caught ValueError running command {}: {}"
+                       .format(cmd, err))
             return False
         self.write_results()
         return result
@@ -200,7 +203,8 @@ class TSDBWorker(MetricAccumulator):
         return True
 
     def err_line(self, str):
-        err_fn = util.makefilename(self.errdir, self.metric, time.strftime('%Y%m%d-%H%M%S'), ".err.gz")
+        err_fn = util.makefilename(self.errdir, self.metric,
+                                   time.strftime('%Y%m%d-%H%M%S'), ".err.gz")
         with gzip.open(err_fn, 'awt') as ef:
             ef.write(str)
 
