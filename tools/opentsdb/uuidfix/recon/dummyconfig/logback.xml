@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <!--<jmxConfigurator/>-->
+  <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+    <target>
+        System.err
+    </target>
+    <encoder>
+      <pattern>
+        %d{ISO8601} %-5level [%thread] %logger{0}: %msg%n
+      </pattern>
+    </encoder>
+  </appender>
+  <appender name="CYCLIC" class="ch.qos.logback.core.read.CyclicBufferAppender">
+    <MaxSize>1024</MaxSize>
+  </appender>
+
+  <logger name="org.apache.zookeeper" level="info"/>
+  <logger name="org.hbase.async" level="info"/>
+  <logger name="com.stumbleupon.async" level="info"/>
+  <root level="info">
+    <appender-ref ref="STDERR"/>
+    <appender-ref ref="CYCLIC"/>
+  </root>
+</configuration>
