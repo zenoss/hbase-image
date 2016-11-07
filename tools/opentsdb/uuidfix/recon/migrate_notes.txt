@@ -41,8 +41,7 @@ exception occurs during processing
 
 after run, we want:
 * list of metrics that were successful
-* list of metrics that failed export
-* list of metrics that failed import
+* list of metrics that failed export/import
 * stderr for both of above
 * data files (.gz) for failed imports (may need for reprocessing)
 * no data files for successful metrics
@@ -54,7 +53,7 @@ TO-DO:
 * add watchers to stderr for import/export
 - move output files upon completion of metric
 - clean up unwanted files
-* test against opentsdb (incl moving tables to backup and attempting restore to new db
+- test against opentsdb (incl moving tables to backup and attempting restore to new db)
 - compress output files
 - fix logging?
 * GUIDcheck for metrics w/GUIDS
