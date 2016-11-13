@@ -25,3 +25,11 @@ For second set (594 files):
 * If not success:
   - log unhappiness
   - mv out/err files to reprocess subfolder (maybe separate from above)
+
+Files:
+INPUT:
+  ${IN}/err/${METRICNAME}-${TIME}-export.out.gz
+  ${IN}/err/${METRICNAME}-${TIME}-import.err.gz
+  ${IN}/log/failed_metrics-${TIME}
+  ${IN}/log/migrate.log
+  ${IN}/log/success_metrics-${TIME}
