@@ -119,9 +119,9 @@ class MapGuidsMain(object):
         else:
             self.fail += 1
             self.fail_metrics.append(resultargs.metric)
-        self.t.ItemsCompleted()
+        self.t.items_completed()
         self.resultcount += 1
-        print "{}: {}\t{}".format(resultargs.metric, "OK" if result else "ERROR", self.t.GetPerfString())
+        print "{}: {}\t{}".format(resultargs.metric, "OK" if result else "ERROR", self.t.perf_string())
 
     def start_work(self):
         self.resultcount = 0
@@ -149,7 +149,7 @@ class MapGuidsMain(object):
 
 
         print "all done! got {} results in {} seconds. {} success and {} fail"\
-            .format(self.resultcount, self.t.ElapsedTime(), self.success,
+            .format(self.resultcount, self.t.elapsed_time(), self.success,
                     self.fail)
         self.write_failed_metrics()
         print "Failed metrics: {}".format(self.fail_metrics)

@@ -11,3 +11,16 @@
 
 echo "fakeopentsdb" $@
 
+function hasdupes()
+{
+    LINES=$(zcat ${FILENAME} | cut -d' ' -f1-2,4- | sort | uniq -d)
+    if [[ -z $LINES ]]
+    then
+        return 0
+    fi
+    return 1
+}
+
+FILENAME=$5
+hasdupes
+exit  $?

@@ -123,7 +123,7 @@ class MigrateMain(object):
 
         self.logger.info("Finished - got %d results in %f seconds. %d "
                          "successful, %d failed", self.resultcount,
-                         self.t.ElapsedTime(), self.success, self.fail)
+                         self.t.elapsed_time(), self.success, self.fail)
         self.write_failed_metrics()
         # print "Failed metrics: {}".format(self.fail_metrics)
         self.logger.info("Failed metrics: %s", self.fail_metrics)
@@ -166,11 +166,11 @@ class MigrateMain(object):
         else:
             self.fail += 1
             self.fail_metrics.append(worker.metric_name)
-        self.t.ItemsCompleted()
+        self.t.items_completed()
         self.resultcount += 1
         self.logger.info("%s: %s", worker.metric_name,
                          "OK" if result else "ERROR")
-        self.logger.info("%s", self.t.GetPerfString())
+        self.logger.info("%s", self.t.perf_string())
 
     def write_failed_metrics(self):
         with open(os.path.join(self.logdir,

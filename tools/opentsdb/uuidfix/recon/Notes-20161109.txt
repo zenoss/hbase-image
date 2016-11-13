@@ -1,0 +1,27 @@
+Error files break down as follows:
+with 'ERROR [main]' / line=: 16501
+   ^^^ these failed because of duplicate timestamps in export data
+with 'ERROR [New I/O worker #2]' or 'ERROR [New I/O worker #3]' and RegionTooBusyException: 594
+   ^^^ These failed because HBase was too busy (?)
+
+For first set (16k files):
+* grep 'line' info from error file (will need to extract timestamp and metric/tags for next step)
+* read data file until metric we errored on.
+* From next line, cat lines to new data file, but fix dupes in remaining data
+* import new data file to tsdb
+* If successful:
+  - log happiness
+  - rm new data file
+  - mv old data / err files to success subfolder
+* If unsuccessful:
+  - log unhappiness
+  - mv new data file, old data/err files to reprocess subfolder
+
+For second set (594 files):
+* Retry import (? check for dupes first ?)
+* If success:
+  - log happiness
+  - mv out/err files to success subfolder (maybe separate from above)
+* If not success:
+  - log unhappiness
+  - mv out/err files to reprocess subfolder (maybe separate from above)

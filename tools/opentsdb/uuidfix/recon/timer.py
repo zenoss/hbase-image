@@ -9,26 +9,37 @@
 
 import time
 
+
 class Timer(object):
     def __init__(self, total, item="Metric"):
         self.total = total
-        self.start = time.time()
+        self.start_time = time.time()
         self.done = 0
         self.item = item
 
-    def ItemsCompleted(self, count=1):
+    def items_completed(self, count=1):
         self.done += count
 
-    def GetStatCount(self):
-        return self.done
+    # def GetStatCount(self):
+    #     return self.done
 
-    def ElapsedTime(self):
-        return time.time() - self.start
+    def time_left(self):
+        return (self.total - self.done) * self.time_per_item()
 
-    def TimePerItem(self):
+    def elapsed_time(self):
+        return time.time() - self.start_time
+
+    def time_per_item(self):
         if self.done == 0:
             return 0.0
-        return float(self.ElapsedTime())/float(self.done)
+        return float(self.elapsed_time()) / float(self.done)
 
-    def GetPerfString(self):
-        return "{} {}s processed in {} sec. {}/{}".format(self.done, self.item, self.ElapsedTime(), self.TimePerItem(), self.item)
+    def start(self):
+        self.start_time = time.time()
+
+    def perf_string(self):
+        return "{} {}s processed in {} sec. {}/{}. " \
+               "Est time remaining: {}".format(self.done, self.item,
+                                               self.elapsed_time(),
+                                               self.time_per_item(), self.item,
+                                               self.time_left())

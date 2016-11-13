@@ -51,7 +51,7 @@ def run_command(cmd, stdout_handler, errorline_handler):
     from subprocess import Popen, PIPE
     # print("about to Popen")
     # p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=1)
-    p = Popen(cmd, stdout=PIPE, stderr = PIPE, bufsize=1)
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=1)
     # print("after Popen")
     error_lines = []
     for line in iter(p.stdout.readline, ''):
@@ -61,7 +61,7 @@ def run_command(cmd, stdout_handler, errorline_handler):
 
     p.stdout.close()
 
-    for line in iter(p.stderr.readline,''):
+    for line in iter(p.stderr.readline, ''):
         errorline_handler(line)
 
     p.stderr.close()
