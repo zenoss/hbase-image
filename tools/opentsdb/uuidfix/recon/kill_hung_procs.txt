@@ -1,0 +1,1 @@
+bg %1; for pid in $(ps -f | grep java | grep -v grep | awk '{print $2}'); do kill $pid; done; fg %1
