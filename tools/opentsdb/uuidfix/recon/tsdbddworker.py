@@ -69,7 +69,7 @@ class TSDBDDWorker(object):
         return os.path.join(self.work_dir, self.get_work_file_name())
 
     def archive_file(self, orig_file, to, compress=True):
-        self.logger.warning("moving %s to %s", orig_file, self.err_dir)
+        self.logger.debug("moving %s to %s", orig_file, self.err_dir)
         if compress:
             source_fn = os.path.basename(orig_file)
             with open(orig_file, 'rb') as f_in, gzip.open(
@@ -81,12 +81,14 @@ class TSDBDDWorker(object):
             shutil.move(orig_file, to)
 
     def dedupe_and_reload(self):
-        self.logger.info("exporting metric %s", self.metric_name)
+        self.logger.info("removing duplicate values from metric %s",
+                         self.metric_name)
         if self.dedupe_metric():
             self.logger.info("importing metric %s", self.metric_name)
             status = self.import_metric()
         else:
-            self.logger.info("error exporting metric %s", self.metric_name)
+            self.logger.info("error removing duplicate values from metric %s",
+                             self.metric_name)
             return False
         return status
 
@@ -145,12 +147,13 @@ class TSDBDDWorker(object):
             return p.returncode == 0
 
     def run(self):
-        self.logger.info("run() for worker with metric %s", self.metric_name)
+        self.logger.debug("run() for worker with metric %s", self.metric_name)
         result = False
         try:
             result = self.dedupe_and_reload()
         except Exception as e:
-            self.logger.exception("exception raised in migrate_data: %s", e)
+            self.logger.exception("exception raised in migrate_data for metric "
+                                  "%s: %s",self.metric_name, e)
         return result
 
 

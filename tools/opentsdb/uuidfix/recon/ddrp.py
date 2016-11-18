@@ -32,13 +32,13 @@ def args():
                         default="/opt/zenoss/etc/opentsdb/opentsdb.conf",
                         help="opentsdb config file for destination tables")
     parser.add_argument("-m", "--metricfile",
-                        required=True,
+                        required=True, default="failed_metrics-20161107-141548",
                         help="file containing names of metrics to migrate")
     parser.add_argument("-o", "--outputdir",
                         default="./reprocess.out",
                         help="directory for output files")
     parser.add_argument("-i", "--inputdir",
-                        default="./reprocess.in",
+                        default="./out",
                         help="directory from which to read input")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="enable verbose logging")
@@ -53,7 +53,7 @@ def args():
                         help="location where logback file will be copied"
                              " (including filename)")
     parser.add_argument('-t', "--input-timestamp", dest="in_ts",
-                        default="20161108-144031",
+                        default="20161107-141548",
                         help="timestamp attached to input file metrics")
     parser.add_argument("--tsdb-bin", dest="tsdbbin",
                         default="/opt/opentsdb/build/tsdb")
