@@ -14,7 +14,7 @@ HDFSMETRICS_VERSION := 1.0
 BASE_IMAGE       := zenoss/centos-base:1.1.1-java
 
 # Version of the output images
-IMAGE_VERSION    := 24.0.3-dev
+IMAGE_VERSION    := 24.0.4-dev
 
 # Names of third-party component artifacts
 HBASE_TARBALL    := hbase-$(HBASE_VERSION)-bin.tar.gz
