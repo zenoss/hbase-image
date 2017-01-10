@@ -105,7 +105,7 @@ docker_zk:
 	cd src/zookeeper; cp run-zk.sh zookeeper-server /usr/bin
 	tar -czf build/$(ZK_TARBALL) /opt/zookeeper* /usr/bin/run-zk.sh /usr/bin/zookeeper-server
 
-build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cache/$(OPENTSDB_TARBALL) cache/$(ESAPI_FILE) cache/$(HDFSMETRICS_JAR) | BUILD_DIR
+build/$(AGGREGATED_TARBALL): cache/$(HADOOP_TARBALL) cache/$(HBASE_TARBALL) cache/$(OPENTSDB_TARBALL)  cache/$(HDFSMETRICS_JAR) | BUILD_DIR
 	docker run  \
 	    -v "$(PWD):/mnt/pwd" \
 	    -w /mnt/pwd \
@@ -128,7 +128,6 @@ docker_aggregated:
 	# HBase
 	tar -C /opt -xzf cache/$(HBASE_TARBALL) --exclude src --exclude docs --exclude '*-tests.jar'
 	ln -s /opt/hbase-$(HBASE_VERSION) /opt/hbase
-	cp cache/$(ESAPI_FILE) /opt/hbase/conf/ESAPI.properties
 	sed -i -e 's/hbase.log.maxfilesize=256MB/hbase.log.maxfilesize=10MB/' /opt/hbase/conf/log4j.properties
 	sed -i -e 's/hbase.log.maxbackupindex=20/hbase.log.maxbackupindex=10/' /opt/hbase/conf/log4j.properties
 	cd src/hbase; cp run-hbase-standalone.sh run-hbase-master.sh run-hbase-regionserver.sh /usr/bin
