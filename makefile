@@ -44,14 +44,25 @@ HBASE_IMAGE    := $(HBASE_REPO):$(IMAGE_VERSION)
 HDFS_IMAGE     := $(HDFS_REPO):$(IMAGE_VERSION)
 OPENTSDB_IMAGE := $(OPENTSDB_REPO):$(IMAGE_VERSION)
 
+#   Given a docker image and a filename: if the image exists,
+# create the file and set its date to the image's creation time;
+# otherwise ensure that the file does not exist
+SET_DATE_FROM_IMAGE=\
+	date=`docker inspect --format {{.Created}} $1 2>/dev/null`; \
+	if [ -z "$$date" ] ; then \
+	    rm -f $2 ;\
+	else \
+	    touch -d $$date $2 ;\
+	fi
+
 # Initialize the hbase, hdfs, and opentsdb placeholder files. These files match 
 # the existence and date of the corresponding images for the make process to 
 # use in determining when a file is out of date.  Using the := operator ensures 
 # that each of these commands will execute exactly once when make is started.
 DUMMY := $(shell mkdir -p -m 0777 sentinel)
-DUMMY := $(shell ./set_date_from_image $(HBASE_IMAGE) sentinel/hbase)
-DUMMY := $(shell ./set_date_from_image $(HDFS_IMAGE) sentinel/hdfs)
-DUMMY := $(shell ./set_date_from_image $(OPENTSDB_IMAGE) sentinel/opentsdb)
+DUMMY := $(shell $(call SET_DATE_FROM_IMAGE,$(HBASE_IMAGE),sentinel/hbase))
+DUMMY := $(shell $(call SET_DATE_FROM_IMAGE,$(HDFS_IMAGE),sentinel/hdfs))
+DUMMY := $(shell $(call SET_DATE_FROM_IMAGE,$(OPENTSDB_IMAGE),sentinel/opentsdb))
 
 AGGREGATED_TARBALL := opentsdb-$(OPENTSDB_VERSION)_hbase-$(HBASE_VERSION)_hadoop-$(HADOOP_VERSION).tar.gz
 
@@ -181,17 +192,17 @@ sentinel/hbase: build/$(ZK_TARBALL) build/$(AGGREGATED_TARBALL) build/Dockerfile
 	docker commit $(INTERMEDIATE_CONTAINER) $(HBASE_IMAGE)
 	docker rm $(INTERMEDIATE_CONTAINER)
 	docker rmi $(INTERMEDIATE_IMAGE)
-	@./set_date_from_image $(HBASE_IMAGE) $@
+	@$(call SET_DATE_FROM_IMAGE,$(HBASE_IMAGE),$@)
 
 # OpenTSDB image is just a different name for the hbase image
 sentinel/opentsdb: sentinel/hbase
 	docker tag $(HBASE_IMAGE) $(OPENTSDB_IMAGE)
-	@./set_date_from_image $(HBASE_IMAGE) $@
+	@$(call SET_DATE_FROM_IMAGE,$(HBASE_IMAGE),$@)
 
 # HDFS image is just a different name for the hbase image
 sentinel/hdfs: sentinel/hbase
 	docker tag $(HBASE_IMAGE) $(HDFS_IMAGE)
-	@./set_date_from_image $(HBASE_IMAGE) $@
+	@$(call SET_DATE_FROM_IMAGE,$(HBASE_IMAGE),$@)
 
 push:
 	docker push $(HBASE_IMAGE)
@@ -200,7 +211,7 @@ push:
 
 clean:
 	-docker rmi $(HBASE_IMAGE) $(OPENTSDB_IMAGE) $(HDFS_IMAGE)
-	rm -rf build sentinel
+	rm -rf build sentinel/*
 	cd hdfsMetrics; make clean
 
 # Generate a make failure if the VERSION string contains "-<some letters>"
