@@ -5,7 +5,7 @@
 # to see if we are using the right versions of other libraries, such as Jackson,
 # using a command like mvn dependency:tree -Dverbose.
 HBASE_VERSION       := 1.1.8
-OPENTSDB_VERSION    := 2.2.2
+OPENTSDB_VERSION    := 2.3.0
 HADOOP_VERSION      := 2.5.2
 ZK_VERSION          := 3.4.5
 HDFSMETRICS_VERSION := 1.0
