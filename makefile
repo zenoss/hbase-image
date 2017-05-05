@@ -157,8 +157,13 @@ docker_aggregated:
 	# OpenTSDB
 	tar -C /opt -xzf cache/$(OPENTSDB_TARBALL)
 	ln -s /opt/opentsdb-$(OPENTSDB_VERSION) /opt/opentsdb
-	cd /opt/opentsdb-$(OPENTSDB_VERSION) && COMPRESSION=NONE HBASE_HOME=/opt/hbase-$(HBASE_VERSION) ./build.sh
-	rm -rf /opt/opentsdb-$(OPENTSDB_VERSION)/build/gwt-unitCache /opt/opentsdb-$(OPENTSDB_VERSION)/build/third_party/gwt/gwt-dev-*.jar
+	# The 2.3.0 tarball contains a bug that causes a build error. See
+	# https://github.com/OpenTSDB/opentsdb/issues/915. To fix the error, copy a
+	# third-party dependancy to the build directory. Delete the next line in the
+	# next upgrade.
+	mkdir -p /opt/opentsdb/build/third_party; cp -r /opt/opentsdb/third_party/javacc /opt/opentsdb/build/third_party
+	cd /opt/opentsdb && COMPRESSION=NONE HBASE_HOME=/opt/hbase-$(HBASE_VERSION) ./build.sh
+	rm -rf /opt/opentsdb/build/gwt-unitCache /opt/opentsdb/third_party/gwt/gwt-dev-*.jar
 	mkdir -p /opt/zenoss/etc/supervisor
 	cd src/opentsdb; cp opentsdb_service.conf /opt/zenoss/etc/supervisor/opentsdb_service.conf
 	cd src/opentsdb; cp create_table_splits.rb create_table_splits.sh start-opentsdb.sh start-opentsdb-client.sh \
