@@ -34,7 +34,7 @@ export BUILD_IMAGE := zenoss/build-tools:0.0.3
 
 ZENPIP := https://zenoss-pip.s3.amazonaws.com/packages
 # Internal zenpip server, in case you don't want to wait for s3
-# ZENPIP := http://zenpip.zendev.org/packages
+# ZENPIP := http://zenpip.zenoss.eng/packages
 
 HBASE_REPO?=zenoss/hbase
 HDFS_REPO?=zenoss/hdfs
