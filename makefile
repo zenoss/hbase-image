@@ -34,7 +34,7 @@ export BUILD_IMAGE := zenoss/build-tools:0.0.3
 
 ZENPIP := https://zenoss-pip.s3.amazonaws.com/packages
 # Internal zenpip server, in case you don't want to wait for s3
-# ZENPIP := http://zenpip.zendev.org/packages
+# ZENPIP := http://zenpip.zenoss.eng/packages
 
 HBASE_REPO?=zenoss/hbase
 HDFS_REPO?=zenoss/hdfs
@@ -169,6 +169,8 @@ docker_aggregated:
 	cd src/opentsdb; cp create_table_splits.rb create_table_splits.sh start-opentsdb.sh start-opentsdb-client.sh \
 	    create-opentsdb-tables.sh set-opentsdb-table-ttl.sh opentsdb_watchdog.sh check_opentsdb.py \
 	    configure-hbase.sh check_hbase.py /opt/opentsdb
+	mkdir -p /opt/zenoss/bin/metrics/
+	cd src/opentsdb; cp opentsdbmetrics.py /opt/zenoss/bin/metrics/
 	mkdir -p /opt/zenoss/log /opt/zenoss/var
 	# Output
 	tar -czf build/$(AGGREGATED_TARBALL) /opt /var/hdfs /var/hbase /usr/bin/run-hbase* /usr/bin/run-hdfs*

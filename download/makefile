@@ -32,7 +32,7 @@ build/$(ZK_TARBALL): | build
 	curl --fail -o $@ $(ZK_INSTALL)
 
 push:
-	scp build/* zenpip.zendev.org:/home/pypiserver/packages
+	scp build/* zenpip.zenoss.eng:/home/pypiserver/packages
 
 clean: 
 	rm -rf build
