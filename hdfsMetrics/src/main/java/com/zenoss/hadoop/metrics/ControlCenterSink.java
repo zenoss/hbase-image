@@ -21,15 +21,23 @@ public class ControlCenterSink implements MetricsSink {
     private Map<String, String> tags = new HashMap<String, String>();
     private List<String> metricPatterns;
     private Map<String, Boolean> metricFilter = new HashMap<String, Boolean>();
+    private String metricPrefix = "";
 
     private HttpPoster metricPoster;
 
     public void putMetrics(MetricsRecord metricsRecord) {
         MetricBatch metricBatch = new MetricBatch(System.currentTimeMillis() / 1000);
+		String metricName = "";
         for (AbstractMetric hadoopMetric : metricsRecord.metrics()) {
             if (includeMetric(hadoopMetric.name())) {
-                Metric metric = new Metric(hadoopMetric.name(), metricsRecord.timestamp(), hadoopMetric.value().doubleValue(), tags);
-                metricBatch.addMetric(metric);
+                Metric shortMetric = new Metric(hadoopMetric.name(), metricsRecord.timestamp(), hadoopMetric.value().doubleValue(), tags);
+                metricBatch.addMetric(shortMetric);
+
+				if (this.metricPrefix.length() > 0) {
+					metricName = this.metricPrefix + hadoopMetric.name();
+					Metric metric = new Metric(metricName, metricsRecord.timestamp(), hadoopMetric.value().doubleValue(), tags);
+					metricBatch.addMetric(metric);
+				}
             }
         }
         try {
@@ -93,5 +101,8 @@ public class ControlCenterSink implements MetricsSink {
             this.metricPatterns = subsetConfiguration.getList("includedMetrics");
 
         }
+        if (subsetConfiguration.containsKey("metricsPrefix")) {
+            this.metricPrefix = subsetConfiguration.getString("metricsPrefix");
+		}
     }
 }
