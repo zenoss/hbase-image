@@ -27,17 +27,17 @@ public class ControlCenterSink implements MetricsSink {
 
     public void putMetrics(MetricsRecord metricsRecord) {
         MetricBatch metricBatch = new MetricBatch(System.currentTimeMillis() / 1000);
-		String metricName = "";
+        String metricName = "";
         for (AbstractMetric hadoopMetric : metricsRecord.metrics()) {
             if (includeMetric(hadoopMetric.name())) {
                 Metric shortMetric = new Metric(hadoopMetric.name(), metricsRecord.timestamp(), hadoopMetric.value().doubleValue(), tags);
                 metricBatch.addMetric(shortMetric);
 
-				if (this.metricPrefix.length() > 0) {
-					metricName = this.metricPrefix + hadoopMetric.name();
-					Metric metric = new Metric(metricName, metricsRecord.timestamp(), hadoopMetric.value().doubleValue(), tags);
-					metricBatch.addMetric(metric);
-				}
+                if (this.metricPrefix.length() > 0) {
+                    metricName = this.metricPrefix + hadoopMetric.name();
+                    Metric metric = new Metric(metricName, metricsRecord.timestamp(), hadoopMetric.value().doubleValue(), tags);
+                    metricBatch.addMetric(metric);
+                }
             }
         }
         try {
@@ -103,6 +103,6 @@ public class ControlCenterSink implements MetricsSink {
         }
         if (subsetConfiguration.containsKey("metricsPrefix")) {
             this.metricPrefix = subsetConfiguration.getString("metricsPrefix");
-		}
+        }
     }
 }
