@@ -108,16 +108,18 @@ class OpenTSDBMetricGatherer(object):
         DEFAULT_TAGS = {}
 
         sought_metrics = (
-            'tsd.uid.ids-available',
             'tsd.rpc.exceptions',
             'tsd.http.query.exceptions',
             'tsd.jvm.ramfree',
+            'tsd.compaction.count',
+            'tsd.datapoints.added',
+            'tsd.hbase.flushes',
         )
 
         for api_stat in api_stats:
             if api_stat.get('metric', '') not in sought_metrics:
                 continue
-            metric_name = api_stat.get('metric', '').replace('.', '_')
+            metric_name = api_stat.get('metric', '')
             metric_name = '%s.%s' % (self.METRIC_PREFIX, metric_name)
             metric_value = api_stat.get('value')
             timestamp = api_stat.get('timestamp', 0)
@@ -127,6 +129,27 @@ class OpenTSDBMetricGatherer(object):
                 tags['zenoss_%s' % k] = v
 
             metrics.append(self.build_metric(metric_name, metric_value, timestamp, tags))
+
+        metrics_to_tags = {
+            'tsd.hbase.rpcs': 'type',
+            'tsd.uid.ids-available': 'kind',
+        }
+
+        for api_stat in api_stats:
+            if api_stat.get('metric', '') not in metrics_to_tags:
+                continue
+            metric_name = api_stat.get('metric', '')
+            metric_suffix = api_stat.get('tags').get(metrics_to_tags[metric_name])
+            formatted_metric = '%s.%s.%s' % (self.METRIC_PREFIX, metric_name, metric_suffix)
+            metric_value = api_stat.get('value')
+            timestamp = api_stat.get('timestamp', 0)
+            tags = {}
+            tags.update(DEFAULT_TAGS)
+            for k, v in api_stat.get('tags', {}).items():
+                tags['zenoss_%s' % k] = v
+
+            metrics.append(self.build_metric(formatted_metric, metric_value, timestamp, tags))
+
 
         return metrics
 
